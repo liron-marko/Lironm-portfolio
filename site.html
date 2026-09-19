@@ -1,0 +1,2465 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<link rel="icon" type="image/png" href="images/favicon.png">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Liron Markovich | UX/UI Designer</title>
+<link href="https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,100..900;1,100..900&display=swap" rel="stylesheet">
+<style>
+/* ===== Design tokens ===== */
+:root {
+  --ink: #1A1C1E;
+  --accent: #822149;
+  --accent-hover: #641830;
+  --accent-pressed: #50122c;
+  --cream: #F5F3E7;
+  --line: #D5D5D5;
+  --field-bg: #FAFAF7;
+  --placeholder: #737373;
+  --disabled-text: #5F5F5F;
+  --disabled-bg: #D9D9D9;
+  --success: #247C46;
+  --success-bg: #EDF7EF;
+  --error: #BF2626;
+  --error-bg: #FCF2F2;
+  --img-bg: #E7E9EA;
+  --sub-grey: #6C7371;
+  --muted-on-dark: #A6A8AA;
+
+  --radius-pill: 999px;
+  --radius-card: 12px;
+  --radius-field: 8px;
+
+  --content-max: 1264px;
+  --nav-max: 1728px;
+
+  /* Helvetica/Arial sit ahead of the system UI fonts: if Roboto never loads
+     (a self-contained build has no CDN), the fallback still reads as a
+     neutral grotesque rather than jumping to a different-looking UI face. */
+  font-family: 'Roboto', 'Helvetica Neue', Helvetica, Arial, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+* { box-sizing: border-box; }
+.visually-hidden {
+  position: absolute; width: 1px; height: 1px;
+  padding: 0; margin: -1px; overflow: hidden;
+  clip: rect(0,0,0,0); white-space: nowrap; border: 0;
+}
+html { scroll-behavior: smooth; }
+body {
+  margin: 0;
+  line-height: 1.5;
+  color: var(--ink);
+  background: #fff;
+  -webkit-font-smoothing: antialiased;
+}
+img { max-width: 100%; display: block; }
+a { color: inherit; text-decoration: none; }
+button { font-family: inherit; cursor: pointer; border: none; background: none; }
+
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    transition-duration: 0.001ms !important;
+  }
+}
+
+/* ===== Focus ===== */
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+textarea:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 2px;
+}
+/* Lightbox triggers are plain divs (tabindex + role=button, added by JS),
+   so they aren't covered by the rule above and were showing the browser's
+   raw default outline on click, which never cleared. :focus-visible here
+   only shows the ring for real keyboard navigation, not mouse clicks. */
+[data-gallery] { outline: none; }
+[data-gallery]:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 2px;
+}
+.nav a:focus-visible,
+.nav-link:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* ===== Header / Nav ===== */
+.site-header {
+  background: var(--ink);
+  padding: 28px 64px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.logo {
+  color: #fff;
+  font-weight: 700;
+  font-size: 20px;
+  letter-spacing: -0.01em;
+}
+.nav {
+  display: flex;
+  gap: 8px;
+}
+.nav-link {
+  color: #fff;
+  font-size: 14px;
+  padding: 8px 18px;
+  border-radius: var(--radius-pill);
+  transition: background 0.15s ease;
+}
+.nav-link:hover { background: rgba(255,255,255,0.1); }
+.nav-link.active {
+  background: #fff;
+  color: var(--ink);
+  font-weight: 700;
+}
+.nav-link.active:hover { background: #fff; }
+
+.menu-toggle {
+  display: none;
+  color: #fff;
+  line-height: 1.5;
+  padding: 8px;
+  /* 40px square once padding is counted, so 50% is a true circle — keeps the
+     pressed wash from rendering as a hard-cornered block. */
+  border-radius: 50%;
+}
+/* The close X lives inside .mobile-menu, not on .menu-toggle. The overlay is
+   position:fixed with z-index 100, so it covers the page header entirely —
+   any icon left on the toggle would be painted over and never seen. */
+.menu-close {
+  color: #fff;
+  line-height: 1.5;
+  padding: 8px;
+  margin-right: -8px;
+  border-radius: 50%;
+}
+.menu-toggle svg,
+.menu-close svg { display: block; fill: none; }
+
+/* mobile nav overlay */
+/* Stays display:flex at all times — `display` can't be transitioned, so the
+   hidden state is carried by opacity + visibility instead. visibility (not
+   just opacity:0) is what keeps the links out of the tab order and stops the
+   invisible panel swallowing taps on the page behind it. */
+.mobile-menu {
+  display: flex;
+  position: fixed;
+  inset: 0;
+  height: 100dvh;
+  max-height: 100dvh;
+  background: var(--ink);
+  z-index: 100;
+  flex-direction: column;
+  padding: 20px;
+  padding-bottom: max(20px, env(safe-area-inset-bottom));
+  /* Expanded, the list is nine items — taller than a short phone viewport. */
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  opacity: 0;
+  visibility: hidden;
+  /* Closing is a correction, so it's quicker than opening and the delay on
+     visibility is what holds the panel around long enough to fade out. */
+  transition: opacity 120ms ease-in, visibility 0s linear 120ms;
+}
+.mobile-menu.open {
+  opacity: 1;
+  visibility: visible;
+  transition: opacity 180ms ease-out, visibility 0s linear 0s;
+}
+/* Top-level items arrive just behind the panel with a small rise. Targets
+   direct children only — the case-study sublinks live one level down and
+   must not animate individually, or they'd fade in while still collapsed.
+   The logo and the close X deliberately aren't in here — the way out
+   shouldn't be the last thing to appear. */
+.mobile-menu-links > * {
+  opacity: 0;
+  transform: translateY(8px);
+  transition: opacity 160ms ease-out, transform 160ms ease-out, background 120ms ease;
+}
+.mobile-menu.open .mobile-menu-links > * {
+  opacity: 1;
+  transform: translateY(0);
+}
+.mobile-menu.open .mobile-menu-links > *:nth-child(1) { transition-delay: 60ms; }
+.mobile-menu.open .mobile-menu-links > *:nth-child(2) { transition-delay: 110ms; }
+.mobile-menu.open .mobile-menu-links > *:nth-child(3) { transition-delay: 160ms; }
+.mobile-menu .site-header { padding: 0 0 16px 0; }
+/* The global reduced-motion rule only zeroes transition-duration, not
+   transition-delay, so the panel would still linger for 120ms on close and
+   the links would still be staggered. Zero both explicitly here. */
+@media (prefers-reduced-motion: reduce) {
+  .mobile-menu,
+  .mobile-menu.open,
+  .mobile-menu-links > *,
+  .mobile-menu.open .mobile-menu-links > * { transition-delay: 0s !important; }
+  .mobile-menu-links > * { opacity: 1; transform: none; }
+  .menu-sublinks { transition: none !important; }
+}
+/* Stops the page behind the overlay scrolling under it. iOS Safari ignores
+   overflow:hidden on body for touch, so pin it — main.js restores scrollY. */
+body.menu-open {
+  overflow: hidden;
+  position: fixed;
+  width: 100%;
+  touch-action: none;
+}
+.mobile-menu-links {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding-top: 16px;
+}
+.mobile-menu-links a {
+  color: #fff;
+  font-size: 18px;
+  padding: 16px;
+  border-radius: 10px;
+}
+.mobile-menu-links a.active {
+  background: #fff;
+  color: var(--ink);
+  font-weight: 700;
+}
+
+/* Expandable "Case-studies" group. It's a <button>, not a link, because it
+   toggles rather than navigates — the index page is reachable via the logo
+   in the overlay header. */
+.menu-group-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  min-height: 48px;
+  color: #fff;
+  font-size: 18px;
+  padding: 0 16px;
+  border-radius: 10px;
+  text-align: left;
+}
+.menu-group-toggle .chev {
+  flex-shrink: 0;
+  transition: transform 200ms ease;
+}
+.menu-group-toggle[aria-expanded="true"] .chev { transform: rotate(180deg); }
+/* Expanded reads as the selected section, so it takes the same white pill as
+   an active link. The chevron uses stroke="currentColor", so it flips to ink
+   along with the label. */
+.menu-group-toggle[aria-expanded="true"] {
+  background: #fff;
+  color: var(--ink);
+  font-weight: 700;
+}
+
+/* 0fr -> 1fr animates to the content's natural height, so there's no
+   max-height guess to outgrow when a seventh case study gets added. */
+.menu-sublinks {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 220ms ease;
+}
+.menu-group-toggle[aria-expanded="true"] + .menu-sublinks { grid-template-rows: 1fr; }
+.menu-sublinks-inner {
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 8px 0;
+}
+.menu-sublinks-inner a {
+  position: relative;
+  display: flex;
+  align-items: center;
+  min-height: 48px;
+  padding: 0 16px 0 28px;
+  font-size: 16px;
+  color: #fff;
+}
+/* Divider is a pseudo-element parked in the middle of the 16px gap rather
+   than a border on the row. A border would sit hard against the row's top
+   edge, putting all the new space on one side of the line. Suppressed
+   around the active pill — a hairline running into the white fill reads as
+   a rendering artefact. */
+.menu-sublinks-inner a + a::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: -8px;
+  height: 1px;
+  background: rgba(255,255,255,0.15);
+}
+.menu-sublinks-inner a.active::before,
+.menu-sublinks-inner a.active + a::before { display: none; }
+.menu-sublinks-inner a.active {
+  background: #fff;
+  color: var(--ink);
+  font-weight: 700;
+}
+
+@media (max-width: 860px) {
+  .site-header { padding: 20px; }
+  .nav { display: none; }
+  .menu-toggle { display: block; }
+}
+
+/* ===== Buttons ===== */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 16px 28px;
+  border-radius: var(--radius-pill);
+  font-weight: 700;
+  font-size: 16px;
+  transition: background 0.15s ease, transform 0.05s ease;
+}
+.btn-primary { background: var(--accent); color: #fff; }
+.btn-primary:hover { background: var(--accent-hover); }
+.btn-primary:active { background: var(--accent-pressed); }
+.btn-primary:disabled {
+  background: var(--disabled-bg);
+  color: var(--disabled-text);
+  cursor: not-allowed;
+}
+.btn-secondary {
+  background: transparent;
+  color: var(--ink);
+  border: 1.5px solid var(--ink);
+}
+.btn-secondary:hover { background: rgba(24,43,36,0.05); }
+.btn-block { width: 100%; }
+
+/* ===== Skill pills ===== */
+.pills { display: flex; flex-wrap: wrap; gap: 16px; margin-bottom: 24px; }
+.pill {
+  padding: 12px;
+  border-radius: 20px;
+  font-size: 16px;
+  line-height: 1.5;
+  color: var(--ink);
+  background: var(--cream);
+}
+
+/* ===== Sections / containers ===== */
+.container {
+  max-width: var(--content-max);
+  margin: 0 auto;
+  padding: 0 32px;
+}
+@media (max-width: 860px) { .container { padding: 0 20px; } }
+
+/* ===== Case study page ===== */
+.case-hero { padding: 64px 0 32px; }
+
+.case-grid {
+  display: grid;
+  grid-template-columns: 727px 512px;
+  gap: 25px;
+  padding: 64px 0 88px;
+  align-items: start;
+  justify-content: center;
+}
+/* The 727/512 tracks are the real Figma widths and total 1264px — exactly the
+   container's max-width, so above 1328px viewport the centred grid spans the
+   full container and the 32px padding is absorbed. Below that the fixed tracks
+   are wider than the content box and the page scrolls sideways, so switch to
+   the same ratio in fr, which shrinks instead of overflowing. */
+@media (max-width: 1327px) and (min-width: 901px) {
+  .case-grid { grid-template-columns: minmax(0, 727fr) minmax(0, 512fr); }
+}
+
+.case-media { display: flex; flex-direction: column; gap: 40px; }
+.case-content h1 { font-size: 40px; font-weight: 600; line-height: 1.3; margin: 0 0 8px; }
+.case-content .subtitle { font-size: 20px; font-weight: 600; line-height: 1.5; color: var(--ink); margin: 0 0 24px; }
+
+.case-body { padding-bottom: 80px; }
+.case-body section,
+.case-content section { margin-bottom: 16px; }
+.case-content section:first-of-type { margin-top: 0; }
+.case-body h2,
+.case-content h2 { font-size: 18px; font-weight: 700; line-height: 1.5; margin: 0 0 16px; }
+.case-body p,
+.case-content p { font-size: 18px; line-height: 1.5; color: var(--ink); margin: 0 0 16px; }
+
+/* ===== Mobile overrides (verified from the real mobile Figma frames,
+   not scaled down from desktop — sizes, weights, and even pill shape
+   genuinely differ at this breakpoint) ===== */
+
+.key-results {
+  background: #EDECE7;
+  border-radius: 12px;
+  padding: 23px 24px;
+  max-width: 100%;
+  margin-bottom: 32px;
+}
+/* "More case-studies" CTA. Lives inside .case-content so on desktop it sits
+   in the text column and picks up its left edge automatically — no offset
+   maths against the media column. 24px clear of the last paragraph; the
+   page-bottom breathing room stays on .case-grid's padding. */
+.case-more { padding-top: 24px; }
+/* Desktop only. On desktop the button follows the last section inside the
+   text column, so the trailing margin is zeroed to make the 24px exact.
+   On mobile the images sit between the text and the button (order 4 vs 5),
+   so zeroing here would collapse the gap before the first "Before" caption
+   instead — the mobile block re-establishes it explicitly. */
+@media (min-width: 901px) {
+  .case-content section:last-of-type { margin-bottom: 0; }
+  .case-content section:last-of-type > p:last-child { margin-bottom: 0; }
+}
+@media (max-width: 900px) {
+  /* order 5 keeps it last, after the written sections (order 4). */
+  .case-more { order: 5; padding-top: 24px; }
+}
+
+.key-results h3 { margin: 0 0 10px; font-size: 20px; font-weight: 700; line-height: 1.5; }
+.key-results p { margin: 0 0 10px; font-size: 18px; font-weight: 400; line-height: 1.5; }
+.key-results strong { font-weight: 500; }
+
+/* image gallery / lightbox trigger */
+.img-group { margin-bottom: 0; max-width: 100%; }
+.img-caption { font-size: 20px; font-weight: 500; line-height: 1.5; color: var(--ink); margin-bottom: 16px; }
+
+/* Desktop comparison: stacked Before/After, matching the real Figma layout
+   pixel-for-pixel (that file's card is also 727px wide, so no scaling needed). */
+.compare-stack {
+  border-radius: 10px;
+  overflow: hidden;
+  padding: 20px 40px 24px;
+}
+.compare-stack img { display: block; width: 100%; }
+.stack-label {
+  display: block;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--ink);
+}
+.compare-stack .stack-label { margin-bottom: 4px; text-align: center; }
+.compare-stack .stack-label:not(:first-child) { margin-top: 24px; }
+
+/* Mobile comparison: two narrow columns side by side inside one shared box,
+   label sits above each image, not below. */
+.compare-side {
+  border-radius: 10px;
+  overflow: hidden;
+  padding: 16px 0 16px;
+  display: flex;
+  justify-content: center;
+  gap: 16px;
+}
+.compare-side-item { width: 212px; }
+.compare-side-item img { display: block; width: 100%; }
+.stack-label.center { text-align: center; margin-bottom: 8px; }
+
+@media (max-width: 500px) {
+  .compare-side { flex-direction: column; align-items: center; gap: 16px; }
+  .compare-side-item { width: 80%; max-width: 260px; }
+}
+.thumb {
+  position: relative;
+  cursor: zoom-in;
+  border-radius: 10px;
+  overflow: hidden;
+  background: #ffffff;
+  aspect-ratio: 727 / 515;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+}
+.thumb img { max-width: 100%; max-height: 100%; width: auto; height: auto; object-fit: contain; border-radius: 6px; }
+
+/* Real per-project card backgrounds, verified against the homepage in Figma.
+   Login and ZIP genuinely have no background there — plain white. */
+.bg-travel { background: #e1ecee; }
+.bg-credit-card { background: #dfe4ec; }
+.bg-account-recovery { background: #ececcc; }
+.bg-login { background: #dfe4ec; }
+.bg-car-buying { background: #e1ecee; }
+.bg-zip { background: #ececcc; }
+
+/* Homepage cards span the full content width, so the 727:515 ratio above
+   (measured for the narrower case-study media column) would blow the box
+   out to ~895px tall here. Let it hug the image + padding instead. */
+.card .thumb { aspect-ratio: auto; height: auto; min-height: 200px; }
+.card .thumb img { max-height: 460px; }
+.thumb .placeholder-label {
+  position: absolute; inset: 0;
+  display: flex; align-items: center; justify-content: center;
+  color: #9aa; font-size: 13px;
+}
+.thumb-badge {
+  position: absolute;
+  bottom: 10px; right: 10px;
+  background: rgba(24,43,36,0.75);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 5px 10px;
+  border-radius: var(--radius-pill);
+}
+
+/* ===== Lightbox ===== */
+.lightbox {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,0.88);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 200;
+  flex-direction: column;
+  padding: 24px;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.2s ease, visibility 0s linear 0.2s;
+}
+.lightbox.open {
+  opacity: 1;
+  visibility: visible;
+  transition: opacity 0.2s ease, visibility 0s linear 0s;
+}
+.lightbox-body { transform: scale(0.985); transition: transform 0.2s ease; }
+.lightbox.open .lightbox-body { transform: scale(1); }
+@media (prefers-reduced-motion: reduce) {
+  .lightbox { transition: opacity 0.01s linear, visibility 0s linear; }
+  .lightbox-body,
+  .lightbox.open .lightbox-body { transform: none; transition: none; }
+}
+.lightbox-close {
+  position: absolute;
+  bottom: 100%;
+  right: 0;
+  margin-bottom: 16px;
+  color: #fff;
+  background: rgba(255, 255, 255, 0.35);
+  font-size: 20px;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1;
+}
+.lightbox-body {
+  display: flex; align-items: center; gap: 8px;
+  max-width: min(1400px, 100%); width: 100%;
+  justify-content: center;
+}
+.lightbox-arrow {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.35);
+  font-size: 24px;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.lightbox-arrow:disabled { visibility: hidden; }
+.lightbox-img-wrap {
+  position: relative;
+  flex: 0 1 auto;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #fff;
+  border-radius: 12px;
+  padding: 24px;
+}
+.lightbox-img-wrap img { border-radius: 4px; width: auto; height: auto; max-width: 100%; max-height: calc(100vh - 200px); object-fit: contain; }
+.lightbox-meta { text-align: center; margin-top: 20px; color: #fff; }
+.lightbox-title { font-weight: 600; font-size: 18px; margin-bottom: 10px; }
+.lightbox-dots { display: flex; gap: 8px; justify-content: center; margin-bottom: 8px; }
+.lightbox-dots span { width: 7px; height: 7px; border-radius: 50%; background: rgba(255,255,255,0.35); }
+.lightbox-dots span.active { background: #fff; }
+.lightbox-counter { font-size: 13px; color: rgba(255,255,255,0.6); }
+
+@media (max-width: 700px) {
+  .lightbox { padding: 16px; }
+  .lightbox-body { flex-direction: column; gap: 16px; }
+  .lightbox-arrow { display: none; }
+  .lightbox-img-wrap { width: 100%; }
+  .lightbox-img-wrap img { max-height: calc(100vh - 240px); }
+  .lightbox-meta { padding: 0 20px; }
+}
+
+/* ===== Form ===== */
+.field { margin-bottom: 20px; }
+.field label { display: block; font-size: 13px; color: #555; margin-bottom: 8px; }
+.field input, .field textarea {
+  width: 100%;
+  font-size: 15px;
+  font-family: inherit;
+  padding: 14px 16px;
+  border-radius: var(--radius-field);
+  border: 1px solid var(--line);
+  background: var(--field-bg);
+  color: var(--ink);
+}
+.field input::placeholder, .field textarea::placeholder { color: var(--placeholder); }
+.field input:focus, .field textarea:focus {
+  outline: none;
+  border-color: var(--ink);
+  box-shadow: 0 0 0 3px var(--accent);
+}
+.field.error input, .field.error textarea { border-color: var(--error); background: var(--error-bg); }
+.field-error-text { color: var(--error); font-size: 12px; margin-top: 6px; }
+.field input:disabled, .field textarea:disabled { background: #EDEDEB; color: var(--disabled-text); }
+
+.form-status {
+  border-radius: 10px;
+  padding: 20px;
+  max-width: 400px;
+  display: none;
+}
+.form-status.show { display: block; }
+.form-status.success { background: var(--success-bg); }
+.form-status.success h4 { color: var(--success); margin: 0 0 6px; }
+.form-status.error { background: var(--error-bg); }
+.form-status.error h4 { color: var(--error); margin: 0 0 6px; }
+.form-status p { margin: 0; color: #555; font-size: 14px; }
+
+/* ===== Footer ===== */
+.site-footer { background: var(--ink); color: #fff; padding: 88px 64px 40px; border-top: 1px solid rgba(255,255,255,0.08); }
+.footer-cta { display: flex; align-items: center; justify-content: space-between; gap: 40px; flex-wrap: wrap; margin-bottom: 56px; }
+.footer-cta h2 { font-size: 40px; margin: 0 0 12px; }
+.footer-cta p { color: var(--muted-on-dark); margin: 0; font-size: 16px; max-width: 500px; }
+.footer-email {
+  background: #fff; color: var(--ink);
+  padding: 18px 28px; border-radius: var(--radius-pill);
+  font-weight: 700; white-space: nowrap;
+}
+.footer-email:hover { background: #f0f0f0; }
+.footer-bottom { border-top: 1px solid rgba(255,255,255,0.18); padding-top: 24px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; }
+.footer-bottom .copyright { font-size: 13px; color: var(--muted-on-dark); }
+.footer-links { display: flex; gap: 32px; }
+.footer-links a { font-size: 14px; }
+.footer-links a:hover { text-decoration: underline; }
+
+@media (max-width: 860px) {
+  .site-footer { padding: 56px 20px 32px; }
+  .footer-cta { flex-direction: column; align-items: flex-start; }
+  .footer-email { width: 100%; text-align: center; }
+  .footer-bottom { flex-direction: column; align-items: flex-start; }
+}
+
+/* ===== Homepage ===== */
+.hero { padding-top: 88px; padding-bottom: 56px; }
+.hero h1 { font-size: 48px; line-height: 1.3; max-width: 100%; margin: 0; font-weight: 500; }
+
+@media (max-width: 900px) {
+  .hero { padding-top: 32px; padding-bottom: 40px; }
+  .hero h1 { font-size: 28px; line-height: 1.3; padding-left: 0; }
+}
+
+.card-grid { display: flex; flex-direction: column; gap: 56px; padding-bottom: 88px; }
+.card { display: block; }
+.card .thumb { margin-bottom: 16px; }
+/* wrap + min-width:0 so the details column shrinks between the mobile
+   breakpoint and the fixed-column desktop layout, instead of pushing the
+   button past the viewport edge (which caused sideways scroll in landscape). */
+.card-row { display: flex; align-items: flex-start; justify-content: space-between; gap: 40px; flex-wrap: wrap; }
+.card-details { max-width: 746px; min-width: 0; flex: 1 1 320px; }
+.card h3 { font-size: 28px; line-height: 1.3; margin: 0 0 6px; }
+.card p { font-size: 18px; color: var(--sub-grey); margin: 0; }
+/* nowrap only where the longest subtitle (Credit card, 762px) actually
+   fits beside the button; below this it wraps instead of spilling over it. */
+@media (min-width: 1100px) { .card p { white-space: nowrap; } }
+.card .btn { flex-shrink: 0; }
+
+@media (max-width: 700px) {
+  .card-row { flex-direction: column; align-items: stretch; gap: 16px; padding: 0 16px; }
+  .card .btn { width: 100%; }
+}
+
+/* ===== About page ===== */
+.about-stack {
+  max-width: 834px;
+  margin: 0 auto;
+  padding: 88px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 40px;
+}
+.about-photo { border-radius: 12px; overflow: hidden; background: var(--img-bg); aspect-ratio: 834/600; }
+.about-photo img { width: 100%; height: 100%; object-fit: cover; }
+.about-intro h1 { font-size: 40px; margin: 0 0 16px; }
+.about-subtitle { font-weight: 500; font-size: 22px; line-height: 1.5; margin: 0; }
+.about-details p { font-size: 18px; line-height: 1.5; color: #333; margin: 0 0 20px; }
+.about-details p:last-child { margin-bottom: 0; }
+.about-contact h2 { font-size: 40px; margin: 0 0 8px; }
+.about-contact .lede { color: var(--sub-grey); margin: 0 0 24px; font-size: 18px; }
+.field-row { display: flex; gap: 24px; }
+.field-row .field { flex: 1; }
+@media (max-width: 700px) {
+  .field-row { flex-direction: column; gap: 0; }
+}
+
+@media (max-width: 900px) {
+  .about-stack { padding: 48px 0; gap: 32px; }
+  .about-photo { aspect-ratio: 1/1; }
+  .about-intro h1 { font-size: 30px; }
+  .about-subtitle { font-size: 18px; }
+  .about-details p { font-size: 16px; }
+  .about-contact h2 { font-size: 28px; }
+  .about-contact .lede { font-size: 16px; }
+}
+
+/* ===== Password gate ===== */
+.gate-body { background: var(--ink); min-height: 100vh; display: flex; flex-direction: column; }
+.gate-main { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 40px 24px; gap: 28px; }
+.gate-lock { width: 48px; height: 48px; }
+.gate-main h1 { color: #fff; font-size: 36px; margin: 0 0 12px; max-width: 560px; }
+.gate-main .lede { color: var(--muted-on-dark); font-size: 17px; max-width: 440px; margin: 0; }
+.gate-form { display: flex; gap: 12px; align-items: stretch; }
+.gate-input-wrap { position: relative; width: 280px; }
+.gate-form input {
+  width: 100%; font-size: 15px; font-family: inherit;
+  padding: 14px 44px 14px 16px; border-radius: var(--radius-field);
+  border: 1px solid var(--line); background: var(--field-bg); color: var(--ink);
+  transition: font-size 0.15s ease, letter-spacing 0.15s ease;
+}
+.gate-form input::placeholder { color: var(--placeholder); }
+/* Masked password characters render as circular dots at a size tied to
+   font-size. Doubling it once there's a value makes those dots read as
+   twice as large while typing, without affecting the placeholder text. */
+.gate-form input:not(:placeholder-shown)[type="password"] {
+  font-size: 30px;
+  letter-spacing: 2px;
+}
+.gate-eye {
+  position: absolute;
+  top: 50%; right: 14px; transform: translateY(-50%);
+  color: var(--placeholder);
+  display: flex; align-items: center; justify-content: center;
+  padding: 4px;
+}
+.gate-eye:hover { color: var(--ink); }
+.gate-error { color: #ffb4b4; font-size: 14px; display: none; }
+.gate-error.show { display: block; }
+.gate-fallback { color: #fff; font-size: 14px; text-decoration: underline; margin-top: -8px; }
+
+@media (max-width: 560px) {
+  .gate-form { flex-direction: column; width: 100%; max-width: 320px; }
+  .gate-input-wrap { width: 100%; }
+}
+
+/* ===== Scroll reveal ===== */
+.reveal {
+  opacity: 0;
+  transform: translateY(8px);
+  transition: opacity 0.5s ease, transform 0.5s ease;
+}
+.reveal-visible {
+  opacity: 1;
+  transform: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  .reveal { transition: none; }
+}
+
+/* ===== Mobile overrides (<=900px) =====
+   MUST stay at the end of the file. These are all single-class selectors,
+   so they tie on specificity with the base rules above and only win on
+   source order. When this block sat higher up, every base rule declared
+   after it silently overrode it (img-group margin, img-caption margin,
+   compare-stack padding, key-results padding, card-grid gap all reverted). */
+@media (max-width: 900px) {
+  /* gap MUST stay 0 here. Every child below is a direct grid item (see
+     display:contents), so any row-gap gets added on top of each element's
+     own margin-bottom — that's what was doubling the spacing. Spacing at
+     this breakpoint is owned entirely by the elements' margins. */
+  .case-grid { grid-template-columns: 1fr; gap: 0; padding: 32px 0 56px; }
+  /* Promote case-media's and case-content's own children to be direct grid
+     items (display:contents keeps the DOM the same, no HTML edits needed),
+     so images can be interleaved with title/results/body via order instead
+     of moving as two whole blocks. */
+  .case-media, .case-content { display: contents; }
+  .case-content h1,
+  .case-content .subtitle,
+  .case-content .pills { order: 1; }
+  .key-results { order: 2; }
+  /* Images sit directly under the Key results box, ahead of the written
+     sections. The label belongs to the image below it, so the gap between
+     one Before/After block and the next must be clearly larger than the 8px
+     between a caption and its own card — otherwise "After" reads as if it
+     were captioning the image above. 40px vs 8px makes the pairing obvious,
+     and the last block's 40px carries into "The Challenge". */
+  .img-group { order: 3; margin-bottom: 40px; }
+  .case-content section { order: 4; }
+  /* Last section is followed by the CTA (order 5), so its trailing margins
+     are zeroed to make .case-more's 24px the exact measured gap. */
+  .case-content section:last-of-type { margin-bottom: 0; }
+  .case-content section:last-of-type > p:last-child { margin-bottom: 0; }
+  .case-content h1 { font-size: 26px; font-weight: 700; line-height: 1.3; margin: 0 0 16px; }
+  .case-content .subtitle { font-size: 16px; font-weight: 600; line-height: 1.5; margin: 0 0 16px; }
+  .case-body h2,
+  .case-content h2 { font-size: 20px; font-weight: 700; line-height: 1.5; margin: 0 0 12px; }
+  .case-body p,
+  .case-content p { font-size: 16px; line-height: 1.5; margin: 0 0 14px; }
+  .img-caption { font-size: 18px; line-height: 1.5; margin-bottom: 8px; }
+  /* Same pairing logic for the travel page's shared Before/After card, and
+     less horizontal inset so the screenshots aren't squeezed on a phone. */
+  .compare-stack { padding: 16px 16px 20px; }
+  .compare-stack .stack-label { margin-bottom: 8px; }
+  .compare-stack .stack-label:not(:first-child) { margin-top: 32px; }
+  .compare-side { padding: 16px 12px; }
+  .pill { padding: 6px 14px; border-radius: 999px; font-size: 14px; line-height: 1.5; }
+  .key-results { padding: 20px; margin-bottom: 40px; }
+}
+
+@media (max-width: 900px) {
+  /* 40px between project cards on the homepage, and the same 56px tail as
+     .case-grid uses — the base 88px was a desktop value left unscoped. */
+  .card-grid { gap: 40px; padding-bottom: 56px; }
+}
+
+/* ===== Pressed states =====
+   Kept at the end of the file: several of these tie on specificity with the
+   base rules for the same elements, so source order decides. */
+/* Mobile browsers paint a light-blue flash on tap by default, which doesn't
+   belong to this palette. Suppress it and define the pressed states below
+   in the site's own colours instead. */
+a, button, [data-gallery], .card { -webkit-tap-highlight-color: transparent; }
+
+/* On the dark green overlay, a translucent white wash reads as pressure
+   without introducing a new hue. */
+.menu-toggle:active,
+.menu-close:active,
+.menu-group-toggle:active,
+.mobile-menu-links a:active { background: rgba(255,255,255,0.14); }
+/* Items already filled white can't go lighter, so they press to the cream
+   used by the Key results card. */
+.mobile-menu-links a.active:active,
+.menu-group-toggle[aria-expanded="true"]:active { background: #EDECE7; }
+/* Sublinks only — the three top-level items get their background transition
+   folded into the entrance rule instead, or this would outrank it and cost
+   them their fade-and-rise. */
+.menu-sublinks-inner a { transition: background 120ms ease; }
+
+/* The thumbs carry gradient backgrounds, so a background-color press state
+   would be painted over. Opacity works on top of any fill. */
+.card .thumb, .card .thumb img { transition: opacity 120ms ease, filter 150ms ease; }
+.card:active .thumb { opacity: 0.88; }
+.nav-link:active { background: rgba(255,255,255,0.18); }
+.btn-secondary:active { background: rgba(24,43,36,0.12); }
+
+
+/* Desktop: the button sits 24px under the last line of text in normal flow,
+   and pins at the viewport top while the image column keeps scrolling past.
+   align-self:stretch gives .case-content the media column's height, which is
+   what creates the slack sticky needs — so this only has a visible effect on
+   pages where the images run longer than the text. */
+@media (min-width: 901px) {
+  .case-content { align-self: stretch; }
+  .case-more { position: sticky; top: 0; }
+}
+
+/* Case-study footer: next-case + all-case-studies pair */
+.case-more { display: flex; flex-wrap: wrap; gap: 16px; align-items: center; }
+.case-more .btn { white-space: nowrap; }
+@media (max-width: 900px) {
+  .case-more { gap: 12px; flex-wrap: wrap; }
+  .case-more .btn { padding: 14px 20px; font-size: 15px; }
+}
+
+/* Card data teaser */
+.card .card-metric {
+  margin: 8px 0 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--accent);
+}
+
+/* Card hover: colour shift only, no movement or scaling */
+.card .btn { transition: background 150ms ease; }
+.card:hover .btn-primary { background: var(--accent-hover); }
+.card .thumb::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: #000;
+  opacity: 0;
+  transition: opacity 150ms ease;
+  pointer-events: none;
+  z-index: 1;
+}
+.card:hover .thumb::after { opacity: 0.11; }
+.card .thumb img { position: relative; z-index: 2; }
+.card .thumb-badge { z-index: 3; }
+@media (hover: none) {
+  .card:hover .btn-primary { background: var(--accent); }
+  .card:hover .thumb::after { opacity: 0; }
+}
+
+/* Count-up numbers keep a stable width so the line doesn't reflow mid-animation */
+.count-up { font-variant-numeric: tabular-nums; }
+
+/* Case-study media: let screenshots run the full column width, but never
+   upscale past their natural pixel size (which would soften them). */
+.case-media .thumb { padding: 40px; }
+.case-media .thumb img {
+  width: auto;
+  max-width: 100%;
+  max-height: none;
+  image-rendering: auto;
+}
+.compare-stack { padding: 40px; }
+.compare-stack img { width: auto; max-width: 100%; margin: 0 auto; }
+.compare-side-item { width: auto; max-width: 100%; flex: 0 1 auto; }
+.compare-side-item img { width: auto; max-width: 100%; }
+
+/* Case-study screenshot cards: image is fully contained with an even 40px
+   inset on every side, and never renders above its natural size. */
+.case-media .thumb,
+.img-group .thumb {
+  box-sizing: border-box;
+  padding: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  aspect-ratio: auto;
+  height: auto;
+}
+.case-media .thumb img,
+.img-group .thumb img {
+  display: block;
+  width: auto;
+  height: auto;
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+}
+
+/* Gallery removed: screenshots are static, not clickable. */
+.thumb { cursor: default; }
+.thumb-badge { display: none; }
+#lightbox, .lightbox { display: none !important; }
+
+/* Desktop: once the text column has been read through, its last element — the
+   next/all buttons — pins below the header while the taller image column
+   keeps scrolling. No background or shadow; they sit on the page as-is. */
+
+/* Never upscale screenshots past their natural pixel size */
+.case-media .thumb img,
+.img-group .thumb img { width: auto; }
+.case-media .thumb img { max-width: min(100%, 100%); }
+
+/* Flat background behind case-study screenshots (no gradient) */
+.case-media .thumb,
+.img-group .thumb { background: #EDECE7 !important; }
+
+/* Uniform homepage card thumbnail height */
+.card .thumb {
+  aspect-ratio: 1454 / 860;
+  height: auto;
+  min-height: 0;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: flex-start;
+}
+.card .thumb img { align-self: center; margin: auto; }
+.card .thumb img { max-height: 100%; max-width: 100%; width: auto; height: auto; object-fit: contain; }
+
+/* Homepage card previews: even 24px inset on all four sides */
+.card .thumb {
+  padding: 24px;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.card .thumb img {
+  display: block;
+  width: auto;
+  height: auto;
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  margin: 0 auto;
+}
+/* Credit card and car buying sources are tall exports; contain would render
+   them tiny. Crop from the top instead - box and spacing stay identical
+   to every other card, only the image's own fit differs. */
+.card .thumb.bg-credit-card img,
+.card .thumb.bg-car-buying img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: top center;
+}
+.card .thumb.bg-credit-card { padding-bottom: 35px; }
+
+/* Result teaser sits on a light grey chip (12.4:1 against the burgundy) */
+.card .card-metric {
+  display: inline-block;
+  background: #EDECE7;
+  padding: 6px 12px;
+  border-radius: 6px;
+}
+
+/* ===== Mobile: give previews real height and edge-to-edge width ===== */
+@media (max-width: 700px) {
+  /* Full-bleed cards so the screenshots aren't squeezed into a narrow column */
+  .card .thumb {
+    margin-left: -4px;
+    margin-right: -4px;
+    padding: 16px;
+  }
+  .card .thumb .card-metric { margin-bottom: 12px; }
+  /* Fill the box edge-to-edge instead of floating small in the middle */
+  .card .thumb img {
+    width: 100%;
+    height: 100%;
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: cover;
+    object-position: top center;
+  }
+  .card .thumb.bg-credit-card img,
+  .card .thumb.bg-car-buying img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: top center;
+  }
+
+  /* Case-study screenshots get the same full-bleed treatment */
+}
+
+/* ===== Inner pages on phones =====
+   The case screenshots are full-page exports (up to 1704×4096). At phone
+   width a contained render is ~4000px tall, which buries the copy under an
+   endless scroll. Cap the card height and crop from the top: the header and
+   hero of each screenshot is the part that reads at this size, and the full
+   version is one tap away on desktop. */
+@media (max-width: 900px) {
+  /* Full screenshots, never clipped — they're the evidence of the case study.
+     Tall exports simply scroll with the page. */
+  .case-media .thumb,
+  .img-group .thumb {
+    padding: 16px;
+    box-sizing: border-box;
+    max-height: none;
+    overflow: visible;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .case-media .thumb img,
+  .img-group .thumb img {
+    width: auto;
+    height: auto;
+    max-width: 100%;
+    max-height: none;
+    object-fit: contain;
+  }
+  .compare-stack img { width: auto; max-width: 100%; height: auto; }
+
+  .case-hero { padding: 32px 0 8px; }
+  .case-more { width: 100%; }
+  .case-more .btn { flex: 1 1 100%; width: 100%; justify-content: center; }
+  .pills { gap: 8px; }
+}
+
+/* Caps at native width but still yields inside the padded card on phones */
+.img-group .thumb img.img-native-375 { width: auto; max-width: min(100%, 375px); height: auto; }
+.img-group .thumb img.img-native-659 { width: auto; max-width: min(100%, 659px); height: auto; }
+
+/* Project sublinks read as a level below "Case-studies": cream fill instead
+   of white, so the parent stays the brighter of the two. */
+/* Active project: pill outline instead of a fill, so it reads as a different
+   kind of item than the solid white "Case-studies" parent. */
+.menu-sublinks-inner a.active {
+  background: transparent;
+  color: #fff;
+  border: 1.5px solid #fff;
+  border-radius: 10px;
+}
+.menu-sublinks-inner a.active:active { background: rgba(255,255,255,0.14); }
+.mobile-menu-links a.active:active { background: #EDECE7; }
+
+/* Footer supporting copy: the invitation carries real weight, the location
+   line stays a quiet footnote under it. */
+.footer-cta p {
+  max-width: 620px;
+  font-size: 20px;
+  line-height: 1.5;
+  font-weight: 500;
+  color: var(--muted-on-dark);
+  opacity: 1;
+  text-wrap: pretty;
+}
+.footer-cta .footer-meta {
+  margin-top: 14px;
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 1.5;
+  color: var(--muted-on-dark);
+}
+@media (max-width: 860px) {
+  .footer-cta p { font-size: 18px; }
+}
+
+/* Result teaser as an overlay chip on the preview, 16px in from the corner */
+.card .thumb .card-metric {
+  position: static;
+  order: -1;
+  align-self: flex-start;
+  flex: 0 0 auto;
+  margin-bottom: 16px;
+  box-shadow: none;
+  margin: 0;
+  display: inline-block;
+  background: #fff;
+  color: var(--accent);
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 1.5;
+  padding: 6px 12px;
+  border-radius: 6px;
+}
+
+/* Clear the metric chip: the preview starts below it, never behind it.
+   The taller card box (1454/860) absorbs this band without shrinking previews.
+   Scoped to wide screens — the mobile block sets its own smaller band, and a
+   two-class selector here would outrank it (media queries add no specificity). */
+
+
+/* ===== Mobile title specs on case pages, normalised =====
+   Every heading level had drifted: image captions, Before/After labels and the
+   Key results heading were each set independently. One scale for all of them. */
+@media (max-width: 900px) {
+  .case-content h1 { font-size: 28px; font-weight: 700; line-height: 1.3; margin: 0 0 16px; }
+  .case-content .subtitle { font-size: 18px; font-weight: 600; line-height: 1.5; margin: 0 0 16px; }
+  .key-results h3,
+  .case-body h2,
+  .case-content h2 { font-size: 20px; font-weight: 700; line-height: 1.5; margin: 0 0 12px; }
+  /* Caption-level labels: image captions and Before/After share one spec.
+     The two-class selectors below are needed to outrank .compare-stack
+     .stack-label / .compare-side .stack-label, which set their own margins. */
+  .img-group .img-caption,
+  .compare-stack .stack-label,
+  .compare-side .stack-label,
+  .compare-side .stack-label.center,
+  .img-caption,
+  .stack-label,
+  .stack-label.center {
+    font-size: 18px;
+    font-weight: 600;
+    line-height: 1.5;
+    color: var(--ink);
+    margin-bottom: 8px;
+  }
+  .key-results p { font-size: 16px; line-height: 1.5; margin: 0 0 10px; }
+}
+
+/* ===== iPhone-class screens =====
+   At 414px the 4/3 card minus the 76px chip band left only ~210px of content
+   height, which squeezed the portrait screenshots back down to thumbnails.
+   Taller boxes here, and the chip band scales with the smaller type. */
+@media (max-width: 700px) {
+  .card .thumb,
+  .card .thumb.bg-credit-card,
+  .card .thumb.bg-car-buying,
+  .card .thumb.bg-zip {
+    padding: 16px;
+    aspect-ratio: auto;
+    height: auto;
+  }
+  .card .thumb .card-metric {
+    font-size: 14px;
+    padding: 5px 10px;
+  }
+  /* Tap targets and rhythm */
+  .card .btn { width: 100%; justify-content: center; }
+  .card-row { flex-direction: column; align-items: stretch; gap: 16px; padding: 0 16px; }
+
+  /* Nothing should be able to push the page sideways on a narrow screen. */
+  html, body { overflow-x: hidden; }
+  .container { overflow-x: clip; }
+}
+
+/* ===== Very tall screenshot strips =====
+   Two case images are full mobile-strip exports (375x4755 and 375x1720). Shown
+   full-bleed they are several uninterrupted screens of scroll inside one card.
+   Bound them and make the rest reachable deliberately — never a silent crop. */
+.thumb.is-bounded {
+  position: relative;
+  max-height: 72vh;
+  overflow: hidden;
+  align-items: flex-start;
+}
+.thumb.is-bounded::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 96px;
+  background: linear-gradient(to bottom, rgba(237,236,231,0), #EDECE7 88%);
+  pointer-events: none;
+  z-index: 3;
+}
+.thumb.is-bounded.is-expanded { max-height: none; }
+.thumb.is-bounded.is-expanded::after { display: none; }
+.thumb-expand {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 12px;
+  padding: 12px 20px;
+  min-height: 44px;
+  font-family: inherit;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--accent);
+  background: transparent;
+  border: 1.5px solid var(--accent);
+  border-radius: var(--radius-pill);
+  cursor: pointer;
+  transition: background 150ms ease, color 150ms ease;
+}
+.thumb-expand:hover { background: var(--accent); color: #fff; }
+.thumb-expand:active { background: var(--accent-hover); color: #fff; }
+@media (max-width: 700px) {
+  .thumb.is-bounded { max-height: 78vh; }
+  .thumb-expand { width: 100%; justify-content: center; }
+}
+
+/* ===== Homepage card layout, final word =====
+   Several earlier blocks set display/align/justify on .card .thumb at the same
+   specificity, so this authoritative block sits last: chip on top in normal
+   flow (never overlapping), image centred in the space that remains. */
+.card .thumb {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: flex-start;
+  box-sizing: border-box;
+}
+.card .thumb .card-metric {
+  order: -1;
+  position: relative;
+  z-index: 5;
+  align-self: flex-start;
+  flex: 0 0 auto;
+  margin: 0 0 16px;
+  box-shadow: none;
+}
+.card .thumb img {
+  flex: 1 1 auto;
+  min-height: 0;
+  width: auto;
+  height: auto;
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  margin: 0 auto;
+  align-self: center;
+}
+@media (max-width: 700px) {
+  .card .thumb .card-metric { margin-bottom: 12px; }
+  .card .thumb img {
+    width: 100%;
+    height: auto;
+    max-width: 100%;
+    max-height: none;
+    object-fit: initial;
+  }
+}
+
+/* Required-field errors under name/email/message */
+.field-error {
+  display: block;
+  margin-top: 6px;
+  font-size: 13px;
+  color: #C0392B;
+}
+
+/* Single-file routing: one .page visible at a time */
+.page[hidden] { display: none !important; }
+</style>
+<template id="__bundler_thumbnail" data-bg-color="#ffffff">
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" width="400" height="400">
+    <rect width="400" height="400" fill="#1A1C1E"/>
+    <text x="200" y="228" text-anchor="middle" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="132" font-weight="700" fill="#ffffff">LM</text>
+  </svg>
+</template>
+</head>
+<body data-depth="">
+<header class="site-header">
+    <a class="logo" href="#home">Liron Markovich</a>
+    <nav class="nav">
+      <a class="nav-link active" href="#home">Case-studies</a>
+      <a class="nav-link" href="#about">About</a>
+    </nav>
+    <button class="menu-toggle" aria-label="Open menu" aria-expanded="false">
+      <svg class="icon-open" width="24" height="24" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+        <path d="M2 5h20M2 12h20M2 19h20" stroke="currentColor" stroke-width="2.5" stroke-linecap="square"/>
+      </svg>
+    </button>
+  </header>
+<div class="mobile-menu">
+    <div class="site-header">
+      <a class="logo" href="#home">Liron Markovich</a>
+      <button class="menu-close" aria-label="Close menu">
+        <svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+          <path d="M4 4l16 16M20 4L4 20" stroke="currentColor" stroke-width="2.5" stroke-linecap="square"/>
+        </svg>
+      </button>
+    </div>
+    <div class="mobile-menu-links">
+      <button class="menu-group-toggle" aria-expanded="false" aria-controls="mm-cases">
+        <span>Case-studies</span>
+        <svg class="chev" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+          <path d="M6 9l6 6 6-6" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="square"/>
+        </svg>
+      </button>
+      <div class="menu-sublinks" id="mm-cases">
+        <div class="menu-sublinks-inner">
+        <a class="" href="#travel-widget">Travel search widget redesign</a>
+        <a class="" href="#credit-card">Credit card dual page experience redesign</a>
+        <a class="" href="#account-recovery">Account recovery experience</a>
+        <a class="" href="#login-experience">My account login experience redesign</a>
+        <a class="" href="#car-buying">Car buying service redesign</a>
+        <a class="" href="#zip-modal">ZIP code modal redesign</a>
+        </div>
+      </div>
+      <a class="" href="#about">About</a>
+    </div>
+  </div>
+
+<div class="page" id="page-home" hidden>
+<main>
+    <section class="hero container">
+      <h1 id="work">I'm Liron. I design experiences that millions of people use, and I make the next step obvious.</h1>
+    </section>
+    <section class="card-grid container"><a class="card" href="#account-recovery">
+        <div class="thumb bg-account-recovery" style="cursor:pointer;">
+          <img src="images/ar-info-section.png" alt="account-recovery">
+          <span class="thumb-badge">1 / 3</span>
+        <span class="card-metric">+154% on the alternate path</span></div>
+        <div class="card-row">
+          <div class="card-details">
+            <h3>Account recovery experience</h3>
+            <p>Simplifying a high-friction account recovery journey</p>
+            
+          </div>
+          <span class="btn btn-primary">View case-study</span>
+        </div>
+      </a>
+<a class="card" href="#car-buying">
+        <div class="thumb bg-car-buying" style="cursor:pointer;">
+          <img src="images/car-after.png" alt="car-buying">
+          <span class="thumb-badge">1 / 2</span>
+        <span class="card-metric">+66.43% referrals</span></div>
+        <div class="card-row">
+          <div class="card-details">
+            <h3>Car buying service redesign</h3>
+            <p>Rebuilding the Locate a Dealer experience around member pricing</p>
+            
+          </div>
+          <span class="btn btn-primary">View case-study</span>
+        </div>
+      </a>
+<a class="card" href="#login-experience">
+        <div class="thumb bg-login" style="cursor:pointer;">
+          <img src="images/login-after.png" alt="login-experience">
+          <span class="thumb-badge">1 / 3</span>
+        <span class="card-metric">60% drop in credential-recovery clicks</span></div>
+        <div class="card-row">
+          <div class="card-details">
+            <h3>My account login experience redesign</h3>
+            <p>Reducing login friction and improving account access conversion</p>
+            
+          </div>
+          <span class="btn btn-primary">View case-study</span>
+        </div>
+      </a>
+<a class="card" href="#travel-widget">
+        <div class="thumb bg-travel" style="cursor:pointer;">
+          <img src="images/travel-device-group.png" alt="travel-widget">
+          <span class="thumb-badge">1 / 5</span>
+        <span class="card-metric">37% increase in clicks</span></div>
+        <div class="card-row">
+          <div class="card-details">
+            <h3>Travel search widget redesign</h3>
+            <p>Modernizing the booking entry point across desktop and mobile</p>
+            
+          </div>
+          <span class="btn btn-primary">View case-study</span>
+        </div>
+      </a>
+<a class="card" href="#credit-card">
+        <div class="thumb bg-credit-card" style="cursor:pointer;">
+          <img src="images/cc-after.png" alt="credit-card">
+          <span class="thumb-badge">1 / 2</span>
+        <span class="card-metric">+11.3% net new accounts</span></div>
+        <div class="card-row">
+          <div class="card-details">
+            <h3>Credit card dual page experience redesign</h3>
+            <p>Driving higher application and account conversion through personalized credit card experiences</p>
+            
+          </div>
+          <span class="btn btn-primary">View case-study</span>
+        </div>
+      </a>
+<a class="card" href="#zip-modal">
+        <div class="thumb bg-zip" style="cursor:pointer;">
+          <img src="images/zip-redesign-generic.png" alt="zip-modal" style="max-width:65%;">
+          <span class="thumb-badge">1 / 3</span><span class="card-metric">Spam complaints stopped</span>
+        </div>
+        <div class="card-row">
+          <div class="card-details">
+            <h3>ZIP code modal redesign</h3>
+            <p>Turning a trust barrier into a welcome</p>
+          </div>
+          <span class="btn btn-primary">View case-study</span>
+        </div>
+      </a>
+</section>
+  </main>
+</div>
+
+<div class="page" id="page-about" hidden>
+<main class="container">
+    <div class="about-stack">
+      <div class="about-photo">
+        <img src="images/about-photo.png" alt="Liron Markovich, UX Designer">
+      </div>
+
+      <div class="about-intro">
+        <h1>Nice to meet you!</h1>
+        <p class="about-subtitle">UX/UI designer with 15+ years in design, the last 7 at AAA designing member experiences for millions of users.</p>
+      </div>
+
+      <div class="about-details">
+        <p>Most designers end up on one side of a line. There are the ones who read funnels and run tests, and the ones who can draw. I never picked, and it turned out to be the useful part.</p>
+        <p>A login redesign cut credential-recovery clicks by 60%. That was structure. But a ZIP code modal on the same site had a different problem. Users said it felt like spam, and no amount of restructuring fixes that. It needed artwork. So I drew it, animated it, and the complaints stopped.</p>
+        <p>I do the unglamorous half too. Accessibility audits, QA, contrast and keyboard checks, and the spec reviews that catch what changed between design and build.</p>
+        <p>AI is part of how I work now, not a separate skill. I use ChatGPT for copy, drafting and tightening the language that goes into a design. For the design work itself, I use Claude with AAA's design system to build fast, functioning prototypes before handoff to the dev team, so engineering sees something they can actually click through instead of static comps. I've also worked with Claude moving designs between Figma and code in both directions.</p>
+        <p><strong>Some problems are structural. Some are emotional. Telling them apart is most of the job.</strong></p>
+      </div>
+
+      <div class="about-contact">
+        <h2>Send a note</h2>
+        <p class="lede">Questions, projects, or hellos. All welcome.</p>
+        <form id="contact-form">
+          <div class="field-row">
+            <div class="field">
+              <label for="name">Name</label>
+              <input type="text" id="name" name="name" placeholder="Your name">
+            </div>
+            <div class="field">
+              <label for="email">Email</label>
+              <input type="email" id="email" name="email" placeholder="your@email.com">
+            </div>
+          </div>
+          <div class="field">
+            <label for="message">Message</label>
+            <textarea id="message" name="message" rows="4" placeholder="Your message"></textarea>
+          </div>
+          <button type="submit" class="btn btn-primary">Send message</button>
+        </form>
+        <div class="form-status" id="form-status"></div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<div class="page" id="page-travel-widget" hidden>
+<main class="container">
+    <div class="case-grid">
+      <div class="case-media">
+        <div class="img-group">
+          <div class="img-caption">iPad &amp; mobile desktop view</div>
+          <div class="thumb bg-travel">
+            <img src="images/travel-device-group.png" alt="iPad and mobile desktop view">
+          </div>
+        </div>
+
+        <div class="img-group">
+          <div class="img-caption">Travel widget - desktop</div>
+          <div class="compare-stack bg-travel">
+            <span class="stack-label">Before</span>
+            <div style="cursor:zoom-in;">
+              <img src="images/travel-desktop-before.png" alt="Travel widget desktop - before">
+            </div>
+            <span class="stack-label">After</span>
+            <div style="cursor:zoom-in;">
+              <img src="images/travel-desktop-after.png" alt="Travel widget desktop - after">
+            </div>
+          </div>
+        </div>
+
+        <div class="img-group">
+          <div class="img-caption">Mobile desktop view</div>
+          <div class="compare-side bg-travel">
+            <div class="compare-side-item">
+              <span class="stack-label center">Before</span>
+              <div style="cursor:zoom-in;">
+                <img src="images/travel-mobile-old.png" alt="Mobile desktop view - before">
+              </div>
+            </div>
+            <div class="compare-side-item">
+              <span class="stack-label center">After</span>
+              <div style="cursor:zoom-in;">
+                <img src="images/travel-mobile-new.png" alt="Mobile desktop view - after">
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="case-content">
+        <h1>Travel search widget redesign</h1>
+      <p class="subtitle">Modernizing the booking entry point across desktop and mobile.</p>
+    <div class="pills">
+      <span class="pill" style="background:#e1ebed;">User experience</span>
+      <span class="pill" style="background:#e1ebed;">Design system</span>
+      <span class="pill" style="background:#e1ebed;">Visual design</span>
+    </div>
+        
+        <div class="key-results">
+      <h3>Key results</h3>
+      <p>37% increase in clicks</p>
+      <p>17.77% increase in bookings</p>
+    </div>
+<section>
+      <h2>The challenge</h2>
+      <p>The control search widget was the entry point to every travel booking, but its design worked against the task. Six product tabs rendered as heavy bordered cards with stacked icons and labels, consuming a full band of vertical space before a member could reach a single input field. On mobile the tab row overflowed horizontally, cutting off Activities entirely and leaving Cruises partially hidden &mdash; two products effectively invisible to anyone who didn't think to scroll sideways.</p>
+      <p>A promotional headline sat between the tabs and the form, pushing the fields further down. Below it, an outlined field treatment gave every input the same visual weight, so nothing signaled where to start.</p>
+    </section>
+    <section>
+      <h2>The solution</h2>
+      <p>Rebuilt the widget around speed to first input.</p>
+      <p>Product tabs were flattened from bordered cards into inline text-and-icon links, with the active state carried by a single filled pill. This cut the tab band's height substantially and let all six products fit on one line on desktop. On mobile, the overflow was resolved with a visible forward affordance so members could tell more products existed rather than discovering them by accident.</p>
+      <p>The promotional headline was removed. It described a benefit members had already accepted by arriving at the widget, and it delayed the task.</p>
+      <p>Fields moved from outlined to filled treatment, creating a lighter, more scannable form where the input areas read as a connected group. On mobile, the search button was promoted directly beneath the fields, with Advanced options and My reservations demoted below it.</p>
+    </section>
+    <section>
+      <h2>Conclusion</h2>
+      <p>Clicks rose 37% and bookings 17.77% with no change to inventory, pricing, or the underlying booking flow. The lift came from removing what sat between the member and the first field: a heavy tab band, a redundant headline, and a mobile layout that hid two of six products.</p>
+      <p>The gap between the two numbers is itself informative. Clicks grew faster than bookings, which is what you'd expect when a redesign primarily improves discoverability: more members engaged with more products, including ones they previously couldn't see.</p>
+    </section>
+    
+    
+    <div class="case-more">
+      <a class="btn btn-primary" href="#credit-card">Next: Credit Card &rarr;</a>
+      <a class="btn btn-secondary" href="#home">All case-studies</a>
+    </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<div class="page" id="page-credit-card" hidden>
+<main class="container">
+    <div class="case-grid">
+      <div class="case-media">
+      <div class="img-group">
+      <div class="img-caption">Before</div>
+      <div class="thumb bg-credit-card">
+        <img src="images/cc-before.png" alt="Before">
+      </div>
+    </div>
+      <div class="img-group">
+      <div class="img-caption">After</div>
+      <div class="thumb bg-credit-card">
+        <img src="images/cc-after.png" alt="After">
+      </div>
+    </div>
+      <div class="img-group">
+      <div class="img-caption">Credit card - mobile screen</div>
+      <div class="thumb bg-credit-card">
+        <img src="images/cc-mobile.png" alt="Credit card - mobile screen" class="img-native-375" width="375" height="4755">
+      </div>
+    </div>
+      </div>
+      <div class="case-content">
+        <h1>Credit card dual page experience redesign</h1>
+      <p class="subtitle">Driving higher application and account conversion through personalized credit card experiences</p>
+    <div class="pills">
+      <span class="pill" style="background:#bfc8d8;">Visual design</span>
+      <span class="pill" style="background:#bfc8d8;">Personalization</span>
+      <span class="pill" style="background:#bfc8d8;">A/B testing</span>
+      <span class="pill" style="background:#bfc8d8;">Information architecture</span>
+      <span class="pill" style="background:#bfc8d8;">Conversion optimization</span>
+    </div>
+        
+        <div class="key-results">
+      <h3>Key results</h3>
+      <p><strong>Phase 1:</strong> Targeted audiences: 26% and 11% application start rates; 2.49% and 3.40% new account conversion.</p>
+      <p><strong>Phase 2:</strong> General traffic: +10.2% application starts, +9.6% completions, +11.3% net new accounts.</p>
+    </div>
+<section>
+      <h2>The challenge</h2>
+      <p>The organization offered two different credit card products, but the existing credit card experience was not optimized for different member needs and intent. A single, undifferentiated page asked every member &mdash; whether travel-motivated, everyday-rewards-motivated, or still comparing &mdash; to self-select their way to the right product.</p>
+      <p>The goal was to create more relevant and engaging experiences that would increase credit card awareness, application starts, and new account acquisition.</p>
+    </section>
+    <section>
+      <h2>The solution</h2>
+      <p>Three intent-based experiences: Dual Card for members evaluating both card options, Travel Card for travel-focused members, and Daily Card for everyday rewards. Each with clearer value props, stronger content hierarchy, and CTAs matched to member intent.</p>
+    </section>
+    <section>
+      <h2>Phase 1: Targeted audience validation</h2>
+      <p>Tested with two high-intent segments.</p>
+      <p>Members with prior card, travel, or rewards engagement started applications at 26% and converted to new accounts at 2.49%. Members pre-screened for eligibility started at 11% but converted at 3.40% &mdash; the highest account rate in the program.</p>
+      <p>Takeaway: Interest drives starts. Eligibility drives completions. Both confirmed that matching design to intent works, but not whether the design alone deserved credit.</p>
+    </section>
+    <section>
+      <h2>Phase 2: Head-to-head vs. original experience</h2>
+      <p>Same design, general traffic, direct A/B test against the existing page.</p>
+      <p>Application start rate rose from 4.48% to 4.94%, a lift of 10.2%. Application completion rate rose from 3.22% to 3.53%, up 9.6%. Net account rate rose from 2.0% to 2.2%, up 11.3%.</p>
+      <p>Takeaway: The lift held down the entire funnel, and the biggest gain landed on new accounts, which is the metric closest to revenue. No offer or product changed. Only the experience did.</p>
+    </section>
+    <section>
+      <h2>Conclusion</h2>
+      <p>Phase 1 proved relevance drives engagement. Phase 2 proved the design carried the lift on its own, without targeting.</p>
+      <p>Targeting is capped by audience size, but experience improvements scale across all traffic. The pattern is validated and ready to extend to the Travel and Daily experiences.</p>
+    </section>
+    
+    
+    <div class="case-more">
+      <a class="btn btn-primary" href="#account-recovery">Next: Account Recovery &rarr;</a>
+      <a class="btn btn-secondary" href="#home">All case-studies</a>
+    </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<div class="page" id="page-account-recovery" hidden>
+<main class="container">
+    <div class="case-grid">
+      <div class="case-media">
+      <div class="img-group">
+      <div class="img-caption">iPad &amp; mobile desktop view</div>
+      <div class="thumb bg-account-recovery">
+        <img src="images/ar-info-section.png" alt="iPad and mobile desktop view">
+      </div>
+    </div>
+      <div class="img-group">
+      <div class="img-caption">Account recovery - username</div>
+      <div class="thumb bg-account-recovery">
+        <img src="images/ar-username.png" alt="Account recovery - username">
+      </div>
+    </div>
+      <div class="img-group">
+      <div class="img-caption">Account recovery - membership number</div>
+      <div class="thumb bg-account-recovery">
+        <img src="images/ar-membership.png" alt="Account recovery - membership number">
+      </div>
+    </div>
+      </div>
+      <div class="case-content">
+        <h1>Account recovery experience</h1>
+      <p class="subtitle">Simplifying a high-friction account recovery journey</p>
+    <div class="pills">
+      <span class="pill" style="background:#e8e8cc;">UX design</span>
+      <span class="pill" style="background:#e8e8cc;">Content design</span>
+      <span class="pill" style="background:#e8e8cc;">Interaction design</span>
+      <span class="pill" style="background:#e8e8cc;">User flows</span>
+      <span class="pill" style="background:#e8e8cc;">Analytics</span>
+    </div>
+        
+        <div class="key-results">
+      <h3>Key results</h3>
+      <p><strong>Username recovery:</strong> up 54%. More members successfully recovered their username.</p>
+      <p><strong>Membership-number path:</strong> up 154%. Members who didn't know their username now had a way through, and used it.</p>
+    </div>
+<section>
+      <h2>The challenge</h2>
+      <p>Recovering an account can be a frustrating experience, especially when members don't remember the username associated with their account.</p>
+      <p>The existing experience needed a clearer path for members to verify their identity and recover access, while also supporting those who didn't know their username.</p>
+      <p>The goal was to simplify the journey, reduce friction, and give members a clear way forward at every step.</p>
+    </section>
+    <section>
+      <h2>The approach</h2>
+      <p>I designed an account recovery experience with two entry points for identity verification.</p>
+      <p>Username path: Members who remember their username can enter it to begin the recovery process. After verifying their identity with a one-time PIN, they can create a new password and regain access to their account.</p>
+      <p>Membership number path: Members who don't remember their username can use their membership number and ZIP code instead. After verification, they receive their username and can continue through the password reset process.</p>
+      <p>Both paths ultimately lead members through the same streamlined password recovery experience.</p>
+    </section>
+    <section>
+      <h2>The solution</h2>
+      <p>Key improvements included: providing an alternative to username-based recovery, breaking the recovery process into simple, manageable steps, clearly communicating what information members need at each stage, using a one-time PIN to verify member identity, providing clear feedback when a username is recovered or a password is successfully changed, and creating a consistent experience across both recovery paths.</p>
+    </section>
+    <section>
+      <h2>The final experience</h2>
+      <p>The resulting flow guides members through: Choose recovery method &rarr; Verify identity &rarr; Recover username if needed &rarr; Create new password &rarr; Confirmation.</p>
+      <p>This approach ensures that forgetting a username doesn't become a dead end and gives members a clear path back into their account.</p>
+    </section>
+    
+    <div class="case-more">
+      <a class="btn btn-primary" href="#login-experience">Next: Login Experience &rarr;</a>
+      <a class="btn btn-secondary" href="#home">All case-studies</a>
+    </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<div class="page" id="page-login-experience" hidden>
+<main class="container">
+    <div class="case-grid">
+      <div class="case-media">
+      <div class="img-group">
+      <div class="img-caption">Before</div>
+      <div class="thumb bg-login">
+        <img src="images/login-before.png" alt="Before">
+      </div>
+    </div>
+      <div class="img-group">
+      <div class="img-caption">After</div>
+      <div class="thumb bg-login">
+        <img src="images/login-after.png" alt="After">
+      </div>
+    </div>
+      <div class="img-group">
+      <div class="img-caption">Login - mobile screen</div>
+      <div class="thumb bg-login">
+        <img src="images/login-mobile1.png" alt="Login - mobile screen">
+      </div>
+    </div>
+      </div>
+      <div class="case-content">
+        <h1>My account login experience redesign</h1>
+      <p class="subtitle">Reducing login friction and improving account access conversion.</p>
+    <div class="pills">
+      <span class="pill" style="background:#bfc8d8;">UX design</span>
+      <span class="pill" style="background:#bfc8d8;">Conversion optimization</span>
+      <span class="pill" style="background:#bfc8d8;">Form design</span>
+      <span class="pill" style="background:#bfc8d8;">Competitive analysis</span>
+      <span class="pill" style="background:#bfc8d8;">Information architecture</span>
+    </div>
+        
+        <div class="key-results">
+      <h3>Key results</h3>
+      <p><strong>Forgot username:</strong> 60% drop in credential-recovery clicks</p>
+      <p><strong>Get proof of insurance:</strong> click-through nearly doubled, 0.9% to 1.7%</p>
+      <p><strong>Login conversion:</strong> 52%, a 3% relative lift</p>
+      <p><strong>My Account visits:</strong> up 5%</p>
+    </div>
+<section>
+      <h2>The challenge</h2>
+      <p>The login page was a plain form beside an undifferentiated list of "skip login" links. Members who couldn't remember their credentials had one visible escape hatch, and self-service tasks were buried in a flat link list with no grouping or hierarchy. The page also sat outside the main site navigation, dead-ending anyone who arrived by mistake.</p>
+    </section>
+    <section>
+      <h2>The solution</h2>
+      <p>Rebuilt the page around two clear paths: log in, or complete a task without logging in.</p>
+      <p>Login moved into a contained card with clear focus. Skip-login tasks were grouped under Membership and Insurance headers and converted from text links into scannable buttons. Primary navigation was added so members could reach other parts of the site. Join AAA was folded into the login card as a tertiary path rather than a competing column.</p>
+    </section>
+    <section>
+      <h2>Results</h2>
+      <p>Measured across matched 135-day pre and post periods.</p>
+      <p>Login conversion rose from 50% to 52%, a 3% relative lift. Login page visits grew 2% and My Account visits grew 5%.</p>
+      <p>Forgot username click-through dropped from 11.6% to 4.6%, a 60% decline. This is the headline result, since the recovery link is a failure signal.</p>
+      <p>Get proof of insurance click-through rose from 0.9% to 1.7%, nearly doubling. This is evidence that grouping tasks by category improved discoverability for high-intent needs.</p>
+    </section>
+    <section>
+      <h2>Conclusion</h2>
+      <p>The redesign moved members through the front door rather than around it. Login conversion improved while credential-recovery clicks fell by more than half.</p>
+      <p>The one skip-login task that grew, proof of insurance, points to where categorization pays off: grouped and labeled buttons outperform an undifferentiated link list.</p>
+    </section>
+    
+    
+    <div class="case-more">
+      <a class="btn btn-primary" href="#car-buying">Next: Car Buying &rarr;</a>
+      <a class="btn btn-secondary" href="#home">All case-studies</a>
+    </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<div class="page" id="page-car-buying" hidden>
+<main class="container">
+    <div class="case-grid">
+      <div class="case-media">
+      <div class="img-group">
+      <div class="img-caption">Before</div>
+      <div class="thumb bg-car-buying">
+        <img src="images/car-before.png" alt="Before">
+      </div>
+    </div>
+      <div class="img-group">
+      <div class="img-caption">After</div>
+      <div class="thumb bg-car-buying">
+        <img src="images/car-after.png" alt="After">
+      </div>
+    </div>
+      </div>
+      <div class="case-content">
+        <h1>Car buying service redesign</h1>
+      <p class="subtitle">Rebuilding the Locate a Dealer experience around member pricing</p>
+    <div class="pills">
+      <span class="pill" style="background:#e1ecee;">Competitive analysis</span>
+      <span class="pill" style="background:#e1ecee;">Information architecture</span>
+    </div>
+        
+        <div class="key-results">
+      <h3>Key results</h3>
+      <p>After implementation, the page saw a 66.43% increase in referrals over the previous 3-month average.</p>
+    </div>
+<section>
+      <h2>The challenge</h2>
+      <p>The dealer referral form was structured around the system's needs, not the member's. Three numbered steps front-loaded vehicle selection before explaining what the member would get. Membership validation sat in the middle of the flow as a hard gate. Dense terms and conditions ran below the form with no answers to the questions members actually had.</p>
+    </section>
+    <section>
+      <h2>The solution</h2>
+      <p>Rebuilt the page around the member's decision, not the form's sequence.</p>
+      <p>The headline was rewritten to lead with the benefit: member pricing at a recommended dealership. "How it works" moved up beside a supporting image and expanded into a plain-language five-step summary.</p>
+      <p>The rigid Step 1/2/3 structure was replaced with two clearly labeled sections: vehicle details and contact information. Membership verification became a persistent inline banner instead of a blocking wall mid-form.</p>
+      <p>Below the form, new content did work the original page left undone: a benefits section with tabs for new and used car purchases, and an FAQ addressing the six questions members most often asked before submitting.</p>
+    </section>
+    <section>
+      <h2>Conclusion</h2>
+      <p>Referrals rose 66.43% without any change to the underlying offer or dealer network. The gain came from restructuring the page around member confidence: explaining the value before asking for information, removing the mid-form gate, and answering objections on the page.</p>
+    </section>
+    
+    
+    <div class="case-more">
+      <a class="btn btn-primary" href="#zip-modal">Next: ZIP Code Modal &rarr;</a>
+      <a class="btn btn-secondary" href="#home">All case-studies</a>
+    </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<div class="page" id="page-zip-modal" hidden>
+<main class="container">
+    <div class="case-grid">
+      <div class="case-media">
+      <div class="img-group">
+      <div class="img-caption">ZIP code modal - control</div>
+      <div class="thumb bg-zip">
+        <img src="images/zip-original.png" alt="ZIP code modal - control">
+      </div>
+    </div>
+      <div class="img-group">
+      <div class="img-caption">ZIP code modal - new design</div>
+      <div class="thumb bg-zip">
+        <img src="images/zip-redesign-generic.png" alt="ZIP code modal - new design" class="img-native-659" width="659" height="532">
+      </div>
+    </div>
+      <div class="img-group">
+      <div class="img-caption">ZIP code modal - mobile screens</div>
+      <div class="thumb bg-zip">
+        <img src="images/zip-new-design.png" alt="ZIP code modal - mobile screens">
+      </div>
+    </div>
+      </div>
+      <div class="case-content">
+        <h1>ZIP code modal redesign</h1>
+      <p class="subtitle">Turning a trust barrier into a welcome.</p>
+    <div class="pills">
+      <span class="pill" style="background:#e8e8cc;">Illustration</span>
+      <span class="pill" style="background:#e8e8cc;">Brand design</span>
+      <span class="pill" style="background:#e8e8cc;">AI-assisted design</span>
+      <span class="pill" style="background:#e8e8cc;">UX writing</span>
+      <span class="pill" style="background:#e8e8cc;">Motion design</span>
+    </div>
+        
+        <div class="key-results">
+      <h3>Outcome</h3>
+      <p>Spam complaints stopped. The modal went from a trust barrier to a branded moment, and the artwork became a recurring element across the site.</p>
+    </div>
+<section>
+      <h2>The challenge</h2>
+      <p>The ZIP code modal was the first thing many members encountered, and users said it felt like spam.</p>
+      <p>The reason was structural. The screen had every marker of a phishing interstitial: it appeared before any content, asked for personal information with no explanation of why, and gave no visual signal that it belonged to a real, familiar brand.</p>
+      <p>The modal existed for a legitimate reason: AAA is a federation of independent clubs, and the ZIP determines which club's site a member sees. But the design gave members no reason to trust it.</p>
+    </section>
+    <section>
+      <h2>The solution</h2>
+      <p>Rebuilt the modal to signal warmth and legitimacy before asking for anything.</p>
+      <p>Custom illustration. Original artwork beneath the input, turning a bare form into a branded moment, the one assurance a phishing page can't fake.</p>
+      <p>Seasonal variation. A set tied to major holidays, so the screen changes through the year and reads as actively maintained.</p>
+      <p>Scaling with AI. Directed AI tooling to extend the illustration set in my established style.</p>
+      <p>Beyond the modal. Animated the artwork in Adobe Animate as HTML5 for the homepage, beside the AAA logo.</p>
+    </section>
+    <section>
+      <h2>Conclusion</h2>
+      <p>The complaints stopped. Nothing changed about what the modal asked for or why it existed; what changed was whether members believed it was legitimate.</p>
+      <p>Trust on a first-touch screen isn't earned through explanation alone; members decide in under a second, before reading.</p>
+    </section>
+    
+    
+    <div class="case-more">
+      <a class="btn btn-primary" href="#travel-widget">Next: Travel Widget &rarr;</a>
+      <a class="btn btn-secondary" href="#home">All case-studies</a>
+    </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<footer class="site-footer">
+    <div class="footer-cta">
+      <div>
+        <h2>Let’s make something better.</h2>
+        <p>Whether it’s a frustrating user flow, a half-baked idea, or a blank canvas, I’m always up for a good design challenge.</p>
+        <p class="footer-meta">Based in San Diego · Available for select projects</p>
+      </div>
+      <a class="footer-email" href="mailto:lironmarko@gmail.com">lironmarko@gmail.com</a>
+    </div>
+    <div class="footer-bottom">
+      <span class="copyright">&copy; 2026 Liron Markovich</span>
+      <div class="footer-links">
+        <a href="https://www.linkedin.com/in/lironmarkovich/" target="_blank" rel="noopener">LinkedIn</a>
+      </div>
+    </div>
+  </footer>
+<script>
+// ===== Mobile menu toggle =====
+function initMobileMenu() {
+  const toggle = document.querySelector('.menu-toggle');
+  const menu = document.querySelector('.mobile-menu');
+  if (!toggle || !menu) return;
+
+  const closeBtn = menu.querySelector('.menu-close');
+  let scrollY = 0;
+
+  // Both buttons hold an inline SVG. Do NOT write to textContent here —
+  // that would delete the icon.
+  const setOpen = (isOpen) => {
+    menu.classList.toggle('open', isOpen);
+    toggle.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+    // Locks the page behind the overlay. Restoring scrollTop is needed
+    // because overflow:hidden on body drops the scroll position on iOS.
+    if (isOpen) {
+      scrollY = window.scrollY;
+      document.body.classList.add('menu-open');
+    } else if (document.body.classList.contains('menu-open')) {
+      document.body.classList.remove('menu-open');
+      window.scrollTo(0, scrollY);
+    }
+  };
+
+  toggle.addEventListener('click', () => setOpen(!menu.classList.contains('open')));
+  if (closeBtn) closeBtn.addEventListener('click', () => setOpen(false));
+
+  // Expandable "Case-studies" group. Pure show/hide — the CSS animates the
+  // 0fr/1fr row, so nothing here needs to measure heights.
+  const groupToggle = menu.querySelector('.menu-group-toggle');
+  if (groupToggle) {
+    groupToggle.addEventListener('click', () => {
+      const isOpen = groupToggle.getAttribute('aria-expanded') === 'true';
+      groupToggle.setAttribute('aria-expanded', isOpen ? 'false' : 'true');
+    });
+  }
+
+  menu.querySelectorAll('a').forEach(link => {
+    link.addEventListener('click', () => setOpen(false));
+  });
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && menu.classList.contains('open')) setOpen(false);
+  });
+
+  // Edge swipe: drag right from the left edge to open, swipe left to close.
+  // Only fires on touch, only from the outer 40px, and only when the gesture
+  // is clearly horizontal — so it never fights vertical page scrolling.
+  (function () {
+    const EDGE = 40, DIST = 60, SLOPE = 1.2;
+    let x0 = 0, y0 = 0, tracking = false;
+    // Same breakpoint that shows the hamburger. Above it the overlay is not a
+    // nav the user can otherwise reach, and the left edge belongs to the OS
+    // back gesture on touch laptops and tablets.
+    const isMobile = () => window.matchMedia('(max-width: 860px)').matches;
+
+    document.addEventListener('touchstart', (e) => {
+      if (e.touches.length !== 1) { tracking = false; return; }
+      const t = e.touches[0];
+      x0 = t.clientX; y0 = t.clientY;
+      const isOpen = menu.classList.contains('open');
+      tracking = isOpen || (isMobile() && x0 <= EDGE);
+    }, { passive: true });
+
+    document.addEventListener('touchend', (e) => {
+      if (!tracking) return;
+      tracking = false;
+      const t = e.changedTouches[0];
+      const dx = t.clientX - x0, dy = t.clientY - y0;
+      if (Math.abs(dx) < DIST || Math.abs(dx) < Math.abs(dy) * SLOPE) return;
+      const isOpen = menu.classList.contains('open');
+      // Close stays ungated, so an open menu can always be dismissed.
+      if (dx > 0 && !isOpen && isMobile()) setOpen(true);
+      else if (dx < 0 && isOpen) setOpen(false);
+    }, { passive: true });
+  })();
+}
+
+// ===== Lightbox =====
+// Each gallery group shares a data-gallery id. Images within a group are
+// gathered in DOM order so the counter/title/arrows all stay in sync.
+function initLightbox() {
+  const lightbox = document.getElementById('lightbox');
+  if (!lightbox) return;
+
+  const imgEl = lightbox.querySelector('.lightbox-img');
+  const titleEl = lightbox.querySelector('.lightbox-title');
+  const counterEl = lightbox.querySelector('.lightbox-counter');
+  const dotsEl = lightbox.querySelector('.lightbox-dots');
+  const prevBtn = lightbox.querySelector('.lightbox-prev');
+  const nextBtn = lightbox.querySelector('.lightbox-next');
+  const closeBtn = lightbox.querySelector('.lightbox-close');
+
+  let currentGroup = [];
+  let currentIndex = 0;
+
+  function render() {
+    const item = currentGroup[currentIndex];
+    imgEl.src = item.src;
+    imgEl.alt = item.title;
+    titleEl.textContent = item.title;
+
+    // Don't let the lightbox upscale an image past its own real resolution --
+    // stretching a small source file beyond its native pixels is what causes
+    // the blurry/pixelated look. min() keeps it sharp AND still respects the
+    // lightbox's own max-width/max-height container limits for large images.
+    imgEl.style.width = '';
+    imgEl.onload = () => {
+      imgEl.style.width = `min(100%, ${imgEl.naturalWidth}px)`;
+    };
+
+    const multi = currentGroup.length > 1;
+    counterEl.style.display = multi ? '' : 'none';
+    dotsEl.style.display = multi ? '' : 'none';
+    prevBtn.style.display = multi ? '' : 'none';
+    nextBtn.style.display = multi ? '' : 'none';
+
+    if (multi) {
+      counterEl.textContent = `${currentIndex + 1} / ${currentGroup.length}`;
+      dotsEl.innerHTML = '';
+      currentGroup.forEach((_, i) => {
+        const dot = document.createElement('span');
+        if (i === currentIndex) dot.classList.add('active');
+        dotsEl.appendChild(dot);
+      });
+    }
+  }
+
+  function open(group, index) {
+    currentGroup = group;
+    currentIndex = index;
+    render();
+    lightbox.classList.add('open');
+    document.body.style.overflow = 'hidden';
+    closeBtn.focus();
+  }
+
+  function close() {
+    lightbox.classList.remove('open');
+    document.body.style.overflow = '';
+  }
+
+  function step(delta) {
+    currentIndex = (currentIndex + delta + currentGroup.length) % currentGroup.length;
+    render();
+  }
+
+  closeBtn.addEventListener('click', close);
+  lightbox.addEventListener('click', (e) => {
+    const clickedContent = e.target.closest('.lightbox-body, .lightbox-meta, .lightbox-close');
+    if (!clickedContent) close();
+  });
+  prevBtn.addEventListener('click', () => step(-1));
+  nextBtn.addEventListener('click', () => step(1));
+
+  document.addEventListener('keydown', (e) => {
+    if (!lightbox.classList.contains('open')) return;
+    if (e.key === 'Escape') close();
+    if (e.key === 'ArrowLeft') step(-1);
+    if (e.key === 'ArrowRight') step(1);
+  });
+
+  // basic swipe support on mobile
+  let touchStartX = null;
+  lightbox.addEventListener('touchstart', (e) => { touchStartX = e.touches[0].clientX; });
+  lightbox.addEventListener('touchend', (e) => {
+    if (touchStartX === null) return;
+    const dx = e.changedTouches[0].clientX - touchStartX;
+    if (Math.abs(dx) > 50) step(dx > 0 ? -1 : 1);
+    touchStartX = null;
+  });
+
+  // wire up every [data-gallery] group on the page
+  const groups = {};
+  document.querySelectorAll('[data-gallery]').forEach(el => {
+    const key = el.dataset.gallery;
+    if (!groups[key]) groups[key] = [];
+    groups[key].push({
+      el,
+      src: el.dataset.fullSrc || el.querySelector('img')?.src || '',
+      title: el.dataset.title || ''
+    });
+  });
+
+  Object.values(groups).forEach(group => {
+    group.forEach((item, index) => {
+      item.el.addEventListener('click', () => open(group, index));
+      item.el.setAttribute('role', 'button');
+      item.el.setAttribute('tabindex', '0');
+      item.el.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); open(group, index); }
+      });
+    });
+  });
+}
+
+// ===== Contact form =====
+// NOTE: this currently only simulates a submission. Wire `action` up to a
+// real backend (Formspree, Netlify Forms, etc.) before relying on it.
+function initContactForm() {
+  const form = document.getElementById('contact-form');
+  if (!form) return;
+  const status = document.getElementById('form-status');
+  const nameField = form.querySelector('[name="name"]');
+  const emailField = form.querySelector('[name="email"]');
+  const messageField = form.querySelector('[name="message"]');
+
+  const MESSAGES = {
+    name: 'Name is required',
+    email: 'Email address is required',
+    message: 'Message is required'
+  };
+
+  function showError(field, text) {
+    const wrap = field.closest('.field');
+    wrap.classList.add('error');
+    let msg = wrap.querySelector('.field-error');
+    if (!msg) {
+      msg = document.createElement('span');
+      msg.className = 'field-error';
+      wrap.appendChild(msg);
+    }
+    msg.textContent = text;
+  }
+  function clearError(field) {
+    const wrap = field.closest('.field');
+    wrap.classList.remove('error');
+    const msg = wrap.querySelector('.field-error');
+    if (msg) msg.remove();
+  }
+
+  function validateField(field) {
+    if (field === nameField) {
+      if (!field.value.trim()) { showError(field, MESSAGES.name); return false; }
+    } else if (field === emailField) {
+      const isValidEmail = /\S+@\S+\.\S+/.test(field.value);
+      if (!field.value.trim()) { showError(field, MESSAGES.email); return false; }
+      if (!isValidEmail) { showError(field, 'Enter a valid email address'); return false; }
+    } else if (field === messageField) {
+      if (!field.value.trim()) { showError(field, MESSAGES.message); return false; }
+    }
+    clearError(field);
+    return true;
+  }
+
+  [nameField, emailField, messageField].forEach((field) => {
+    field.addEventListener('blur', () => validateField(field));
+    field.addEventListener('input', () => {
+      const wrap = field.closest('.field');
+      if (wrap.classList.contains('error')) validateField(field);
+    });
+  });
+
+  form.addEventListener('submit', (e) => {
+    e.preventDefault();
+    let valid = true;
+
+    if (!nameField.value.trim()) { showError(nameField, MESSAGES.name); valid = false; }
+    else clearError(nameField);
+
+    const isValidEmail = /\S+@\S+\.\S+/.test(emailField.value);
+    if (!emailField.value.trim()) { showError(emailField, MESSAGES.email); valid = false; }
+    else if (!isValidEmail) { showError(emailField, 'Enter a valid email address'); valid = false; }
+    else clearError(emailField);
+
+    if (!messageField.value.trim()) { showError(messageField, MESSAGES.message); valid = false; }
+    else clearError(messageField);
+
+    if (!valid) return;
+
+    const submitBtn = form.querySelector('button[type="submit"]');
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Sending\u2026';
+
+    // simulated network delay -- replace with a real fetch() to your backend
+    setTimeout(() => {
+      form.style.display = 'none';
+      status.className = 'form-status success show';
+      status.innerHTML = '<h4>Message sent</h4><p>Thanks for reaching out \u2014 I\u2019ll get back to you soon.</p>';
+    }, 900);
+  });
+}
+// ===== Scroll reveal =====
+// Fades/slides elements in as they enter the viewport. Purely additive --
+// if IntersectionObserver isn't available for some reason, everything just
+// stays visible (no broken/invisible content).
+function initScrollReveal() {
+  if (!('IntersectionObserver' in window)) return;
+  const targets = document.querySelectorAll(
+    '.card, .img-group, .about-photo, .about-copy > *, .case-content > *'
+  );
+  if (!targets.length) return;
+
+  const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  targets.forEach(el => el.classList.add('reveal'));
+  if (reduceMotion) {
+    targets.forEach(el => el.classList.add('reveal-visible'));
+    return;
+  }
+
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        entry.target.classList.add('reveal-visible');
+        observer.unobserve(entry.target);
+      }
+    });
+  }, { threshold: 0.15, rootMargin: '0px 0px -40px 0px' });
+
+  targets.forEach(el => observer.observe(el));
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  initMobileMenu();
+  initCountUp();
+  initContactForm();
+  initScrollReveal();
+});
+
+
+// ===== Count-up for percentages in Key results =====
+// Wraps every number token in .key-results paragraphs, then counts each from
+// 0 to its real value the first time the block scrolls into view.
+function initCountUp() {
+  const blocks = document.querySelectorAll('.card-metric');
+  if (!blocks.length) return;
+
+  const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const NUM = /(\d{1,3}(?:,\d{3})*(?:\.\d+)?)(%?)/g;
+
+  blocks.forEach((block) => {
+    const targets = block.matches('.card-metric') ? [block] : block.querySelectorAll('p, h3');
+    targets.forEach((el) => {
+      if (el.querySelector('.count-up')) return;
+      // Only touch text nodes, so nested markup (<strong>) survives.
+      const walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT);
+      const nodes = [];
+      while (walker.nextNode()) nodes.push(walker.currentNode);
+      nodes.forEach((node) => {
+        if (!NUM.test(node.nodeValue)) return;
+        NUM.lastIndex = 0;
+        const frag = document.createDocumentFragment();
+        let last = 0, m;
+        while ((m = NUM.exec(node.nodeValue)) !== null) {
+          if (m.index > last) frag.appendChild(document.createTextNode(node.nodeValue.slice(last, m.index)));
+          const span = document.createElement('span');
+          span.className = 'count-up';
+          span.dataset.value = m[1].replace(/,/g, '');
+          span.dataset.suffix = m[2] || '';
+          span.dataset.decimals = (m[1].split('.')[1] || '').length;
+          span.textContent = m[0];
+          frag.appendChild(span);
+          last = m.index + m[0].length;
+        }
+        if (last < node.nodeValue.length) frag.appendChild(document.createTextNode(node.nodeValue.slice(last)));
+        node.parentNode.replaceChild(frag, node);
+      });
+    });
+  });
+
+  const format = (n, decimals) => {
+    const s = decimals > 0 ? n.toFixed(decimals) : String(Math.round(n));
+    const parts = s.split('.');
+    parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+    return parts.join('.');
+  };
+
+  const run = (span) => {
+    const target = parseFloat(span.dataset.value);
+    const decimals = parseInt(span.dataset.decimals, 10) || 0;
+    const suffix = span.dataset.suffix;
+    if (reduced || !isFinite(target)) { span.textContent = format(target, decimals) + suffix; return; }
+    const dur = 1100;
+    const t0 = performance.now();
+    const tick = (now) => {
+      const p = Math.min(1, (now - t0) / dur);
+      const eased = p < 0.5 ? 4 * p * p * p : 1 - Math.pow(-2 * p + 2, 3) / 2;
+      span.textContent = format(target * eased, decimals) + suffix;
+      if (p < 1) requestAnimationFrame(tick);
+    };
+    span.textContent = format(0, decimals) + suffix;
+    requestAnimationFrame(tick);
+  };
+
+  if (!('IntersectionObserver' in window)) {
+    document.querySelectorAll('.count-up').forEach(run);
+    return;
+  }
+  const io = new IntersectionObserver((entries) => {
+    entries.forEach((en) => {
+      if (!en.isIntersecting) return;
+      en.target.querySelectorAll('.count-up').forEach(run);
+      io.unobserve(en.target);
+    });
+  }, { threshold: 0.35 });
+  blocks.forEach((b) => io.observe(b));
+}
+
+
+// ===== Start every page at the top =====
+// html has scroll-behavior:smooth for in-page anchors, which also makes the
+// browser's own restore animate. Pin to the top instantly on load instead.
+(function () {
+  if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
+  function toTop() {
+    if (location.hash) return; // real in-page anchor, leave it alone
+    var root = document.documentElement;
+    var prev = root.style.scrollBehavior;
+    root.style.scrollBehavior = 'auto';
+    var s = document.scrollingElement || root;
+    if (s) s.scrollTop = 0;
+    window.scrollTo(0, 0);
+    requestAnimationFrame(function () { root.style.scrollBehavior = prev; });
+  }
+  toTop();
+  document.addEventListener('DOMContentLoaded', toTop);
+  window.addEventListener('load', toTop);
+})();
+
+
+// ===== Bound very tall screenshot strips =====
+// Mobile-strip exports can render several screens tall inside one card. Cap
+// those and add an explicit control, so nothing is hidden without a way back.
+function initTallImages() {
+  // Mobile-strip exports are extremely narrow for their height (375x4755 =
+  // 12.7). Desktop full-page shots sit near 2.5. Anything past 4 is a strip.
+  var STRIP_RATIO = 4;
+  document.querySelectorAll('.img-group .thumb, .case-media .thumb').forEach(function (thumb) {
+    var img = thumb.querySelector('img');
+    if (!img) return;
+
+    function apply() {
+      var nh = img.naturalHeight, nw = img.naturalWidth;
+      var tall = nw > 0 && (nh / nw) > STRIP_RATIO;
+      if (!tall) {
+        thumb.classList.remove('is-bounded', 'is-expanded');
+        var stale = thumb.parentNode.querySelector('.thumb-expand');
+        if (stale) stale.remove();
+        return;
+      }
+      if (thumb.classList.contains('is-bounded')) return;
+      thumb.classList.add('is-bounded');
+
+      var btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'thumb-expand';
+      btn.setAttribute('aria-expanded', 'false');
+      btn.textContent = 'Show the full screen';
+      btn.addEventListener('click', function () {
+        var open = thumb.classList.toggle('is-expanded');
+        btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+        btn.textContent = open ? 'Collapse' : 'Show the full screen';
+        if (!open) {
+          var top = thumb.getBoundingClientRect().top + window.scrollY - 90;
+          window.scrollTo(0, top);
+        }
+      });
+      thumb.parentNode.insertBefore(btn, thumb.nextSibling);
+    }
+
+    if (img.complete && img.offsetHeight) apply();
+    else img.addEventListener('load', apply, { once: true });
+  });
+}
+
+document.addEventListener('DOMContentLoaded', initTallImages);
+
+</script>
+<script>
+// ===== Hash router =====
+// The whole site ships as one file, so navigation swaps .page blocks instead
+// of loading documents. Nav state and menu wiring are re-applied per route.
+(function () {
+  if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
+  var ROUTES = ['home','about','travel-widget','credit-card','account-recovery','login-experience','car-buying','zip-modal'];
+
+  function routeId() {
+    var h = (location.hash || '#home').replace('#','');
+    return ROUTES.indexOf(h) > -1 ? h : 'home';
+  }
+
+  function markActive(id) {
+    document.querySelectorAll('.nav-link').forEach(function (a) {
+      var href = a.getAttribute('href') || '';
+      a.classList.toggle('active', href === '#' + id || (id !== 'about' && href === '#home'));
+    });
+    document.querySelectorAll('.menu-sublinks-inner a, .mobile-menu-links > a').forEach(function (a) {
+      a.classList.toggle('active', a.getAttribute('href') === '#' + id);
+    });
+  }
+
+  function show(id) {
+    ROUTES.forEach(function (r) {
+      var el = document.getElementById('page-' + r);
+      if (el) el.hidden = (r !== id);
+    });
+    markActive(id);
+    document.body.classList.remove('menu-open');
+    var mm = document.querySelector('.mobile-menu');
+    if (mm) mm.classList.remove('open');
+    // Jump, don't glide: html has scroll-behavior:smooth for in-page anchors,
+    // so a route change would otherwise animate the whole way back up.
+    var root = document.documentElement;
+    var prev = root.style.scrollBehavior;
+    root.style.scrollBehavior = 'auto';
+    var s = document.scrollingElement || root;
+    if (s) s.scrollTop = 0;
+    if (window.pageYOffset) window.scrollTo(0, 0);
+    requestAnimationFrame(function () { root.style.scrollBehavior = prev; });
+    // Re-run the page scripts that bind per-view behaviour.
+    if (typeof initCountUp === 'function') initCountUp();
+    if (typeof initTallImages === 'function') initTallImages();
+    if (typeof initContactForm === 'function') initContactForm();
+  }
+
+  // Some artifact hosts sandbox or rewrite the hash, so don't rely on the
+  // hashchange event alone — handle the click itself as well.
+  document.addEventListener('click', function (e) {
+    var a = e.target.closest && e.target.closest('a[href^="#"]');
+    if (!a) return;
+    var id = a.getAttribute('href').slice(1);
+    if (ROUTES.indexOf(id) === -1) return; // real in-page anchor
+    e.preventDefault();
+    if (location.hash !== '#' + id) {
+      try { history.pushState(null, '', '#' + id); } catch (err) { location.hash = id; }
+    }
+    show(id);
+  });
+  window.addEventListener('hashchange', function () { show(routeId()); });
+  window.addEventListener('popstate', function () { show(routeId()); });
+  document.addEventListener('DOMContentLoaded', function () { show(routeId()); });
+  if (document.readyState !== 'loading') show(routeId());
+})();
+</script>
+</body>
+</html>

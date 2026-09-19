@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<link rel="icon" type="image/png" href="images/favicon.png">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>About | Liron Markovich</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,100..900;1,100..900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+
+<template id="__bundler_thumbnail" data-bg-color="#ffffff">
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" width="400" height="400">
+    <rect width="400" height="400" fill="#1A1C1E"/>
+    <text x="200" y="228" text-anchor="middle" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="132" font-weight="700" fill="#ffffff">LM</text>
+  </svg>
+</template>
+</head>
+<body data-depth="">
+<script src="js/guard.js"></script>
+  <header class="site-header">
+    <a class="logo" href="index.html">Liron Markovich</a>
+    <nav class="nav">
+      <a class="nav-link" href="index.html">Case-studies</a>
+      <a class="nav-link active" href="about.html">About</a>
+    </nav>
+    <button class="menu-toggle" aria-label="Open menu" aria-expanded="false">
+      <svg class="icon-open" width="24" height="24" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+        <path d="M2 5h20M2 12h20M2 19h20" stroke="currentColor" stroke-width="2.5" stroke-linecap="square"/>
+      </svg>
+    </button>
+  </header>
+  <div class="mobile-menu">
+    <div class="site-header">
+      <a class="logo" href="index.html">Liron Markovich</a>
+      <button class="menu-close" aria-label="Close menu">
+        <svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+          <path d="M4 4l16 16M20 4L4 20" stroke="currentColor" stroke-width="2.5" stroke-linecap="square"/>
+        </svg>
+      </button>
+    </div>
+    <div class="mobile-menu-links">
+      <button class="menu-group-toggle" aria-expanded="false" aria-controls="mm-cases">
+        <span>Case-studies</span>
+        <svg class="chev" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+          <path d="M6 9l6 6 6-6" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="square"/>
+        </svg>
+      </button>
+      <div class="menu-sublinks" id="mm-cases">
+        <div class="menu-sublinks-inner">
+        <a class="" href="work/travel-widget.html">Travel search widget redesign</a>
+        <a class="" href="work/credit-card.html">Credit card dual page experience redesign</a>
+        <a class="" href="work/account-recovery.html">Account recovery experience</a>
+        <a class="" href="work/login-experience.html">My account login experience redesign</a>
+        <a class="" href="work/car-buying.html">Car buying service redesign</a>
+        <a class="" href="work/zip-modal.html">ZIP code modal redesign</a>
+        </div>
+      </div>
+      <a class="active" href="about.html">About</a>
+    </div>
+  </div>
+  <main class="container">
+    <div class="about-stack">
+      <div class="about-photo">
+        <img src="images/about-photo.png" alt="Liron Markovich, UX Designer">
+      </div>
+
+      <div class="about-intro">
+        <h1>Nice to meet you!</h1>
+        <p class="about-subtitle">UX/UI designer with 15+ years in design, the last 7 at AAA designing member experiences for millions of users.</p>
+      </div>
+
+      <div class="about-details">
+        <p>Most designers end up on one side of a line. There are the ones who read funnels and run tests, and the ones who can draw. I never picked, and it turned out to be the useful part.</p>
+        <p>A login redesign cut credential-recovery clicks by 60%. That was structure. But a ZIP code modal on the same site had a different problem. Users said it felt like spam, and no amount of restructuring fixes that. It needed artwork. So I drew it, animated it, and the complaints stopped.</p>
+        <p>I do the unglamorous half too. Accessibility audits, QA, contrast and keyboard checks, and the spec reviews that catch what changed between design and build.</p>
+        <p>AI is part of how I work now, not a separate skill. I use ChatGPT for copy, drafting and tightening the language that goes into a design. For the design work itself, I use Claude with AAA's design system to build fast, functioning prototypes before handoff to the dev team, so engineering sees something they can actually click through instead of static comps. I've also worked with Claude moving designs between Figma and code in both directions.</p>
+        <p><strong>Some problems are structural. Some are emotional. Telling them apart is most of the job.</strong></p>
+      </div>
+
+      <div class="about-contact">
+        <h2>Send a note</h2>
+        <p class="lede">Questions, projects, or hellos. All welcome.</p>
+        <form id="contact-form">
+          <div class="field-row">
+            <div class="field">
+              <label for="name">Name</label>
+              <input type="text" id="name" name="name" placeholder="Your name">
+            </div>
+            <div class="field">
+              <label for="email">Email</label>
+              <input type="email" id="email" name="email" placeholder="your@email.com">
+            </div>
+          </div>
+          <div class="field">
+            <label for="message">Message</label>
+            <textarea id="message" name="message" rows="4" placeholder="Your message"></textarea>
+          </div>
+          <button type="submit" class="btn btn-primary">Send message</button>
+        </form>
+        <div class="form-status" id="form-status"></div>
+      </div>
+    </div>
+  </main>
+  <footer class="site-footer">
+    <div class="footer-cta">
+      <div>
+        <h2>Let’s make something better.</h2>
+        <p>Whether it’s a frustrating user flow, a half-baked idea, or a blank canvas, I’m always up for a good design challenge.</p>
+        <p class="footer-meta">Based in San Diego · Available for select projects</p>
+      </div>
+      <a class="footer-email" href="mailto:lironmarko@gmail.com">lironmarko@gmail.com</a>
+    </div>
+    <div class="footer-bottom">
+      <span class="copyright">&copy; 2026 Liron Markovich</span>
+      <div class="footer-links">
+        <a href="https://www.linkedin.com/in/lironmarkovich/" target="_blank" rel="noopener">LinkedIn</a>
+      </div>
+    </div>
+  </footer>
+  
+<script src="js/main.js"></script>
+
+</body>
+</html>

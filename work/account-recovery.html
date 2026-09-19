@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<link rel="icon" type="image/png" href="../images/favicon.png">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Account recovery experience | Liron Markovich</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,100..900;1,100..900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../css/style.css">
+
+<template id="__bundler_thumbnail" data-bg-color="#ffffff">
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" width="400" height="400">
+    <rect width="400" height="400" fill="#1A1C1E"/>
+    <text x="200" y="228" text-anchor="middle" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="132" font-weight="700" fill="#ffffff">LM</text>
+  </svg>
+</template>
+</head>
+<body data-depth="../">
+<script src="../js/guard.js"></script>
+  <header class="site-header">
+    <a class="logo" href="../index.html">Liron Markovich</a>
+    <nav class="nav">
+      <a class="nav-link active" href="../index.html">Case-studies</a>
+      <a class="nav-link" href="../about.html">About</a>
+    </nav>
+    <button class="menu-toggle" aria-label="Open menu" aria-expanded="false">
+      <svg class="icon-open" width="24" height="24" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+        <path d="M2 5h20M2 12h20M2 19h20" stroke="currentColor" stroke-width="2.5" stroke-linecap="square"/>
+      </svg>
+    </button>
+  </header>
+  <div class="mobile-menu">
+    <div class="site-header">
+      <a class="logo" href="../index.html">Liron Markovich</a>
+      <button class="menu-close" aria-label="Close menu">
+        <svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+          <path d="M4 4l16 16M20 4L4 20" stroke="currentColor" stroke-width="2.5" stroke-linecap="square"/>
+        </svg>
+      </button>
+    </div>
+    <div class="mobile-menu-links">
+      <button class="menu-group-toggle" aria-expanded="true" aria-controls="mm-cases">
+        <span>Case-studies</span>
+        <svg class="chev" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+          <path d="M6 9l6 6 6-6" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="square"/>
+        </svg>
+      </button>
+      <div class="menu-sublinks" id="mm-cases">
+        <div class="menu-sublinks-inner">
+        <a class="" href="../work/travel-widget.html">Travel search widget redesign</a>
+        <a class="" href="../work/credit-card.html">Credit card dual page experience redesign</a>
+        <a class="active" href="../work/account-recovery.html">Account recovery experience</a>
+        <a class="" href="../work/login-experience.html">My account login experience redesign</a>
+        <a class="" href="../work/car-buying.html">Car buying service redesign</a>
+        <a class="" href="../work/zip-modal.html">ZIP code modal redesign</a>
+        </div>
+      </div>
+      <a class="" href="../about.html">About</a>
+    </div>
+  </div>
+  <main class="container">
+    <div class="case-grid">
+      <div class="case-media">
+      <div class="img-group">
+      <div class="img-caption">iPad &amp; mobile desktop view</div>
+      <div class="thumb bg-account-recovery">
+        <img src="../images/ar-info-section.png" alt="iPad and mobile desktop view">
+      </div>
+    </div>
+      <div class="img-group">
+      <div class="img-caption">Account recovery - username</div>
+      <div class="thumb bg-account-recovery">
+        <img src="../images/ar-username.png" alt="Account recovery - username">
+      </div>
+    </div>
+      <div class="img-group">
+      <div class="img-caption">Account recovery - membership number</div>
+      <div class="thumb bg-account-recovery">
+        <img src="../images/ar-membership.png" alt="Account recovery - membership number">
+      </div>
+    </div>
+      </div>
+      <div class="case-content">
+        <h1>Account recovery experience</h1>
+      <p class="subtitle">Simplifying a high-friction account recovery journey</p>
+    <div class="pills">
+      <span class="pill" style="background:#e8e8cc;">UX design</span>
+      <span class="pill" style="background:#e8e8cc;">Content design</span>
+      <span class="pill" style="background:#e8e8cc;">Interaction design</span>
+      <span class="pill" style="background:#e8e8cc;">User flows</span>
+      <span class="pill" style="background:#e8e8cc;">Analytics</span>
+    </div>
+        
+        <div class="key-results">
+      <h3>Key results</h3>
+      <p><strong>Username recovery:</strong> up 54%. More members successfully recovered their username.</p>
+      <p><strong>Membership-number path:</strong> up 154%. Members who didn't know their username now had a way through, and used it.</p>
+    </div>
+<section>
+      <h2>The challenge</h2>
+      <p>Recovering an account can be a frustrating experience, especially when members don't remember the username associated with their account.</p>
+      <p>The existing experience needed a clearer path for members to verify their identity and recover access, while also supporting those who didn't know their username.</p>
+      <p>The goal was to simplify the journey, reduce friction, and give members a clear way forward at every step.</p>
+    </section>
+    <section>
+      <h2>The approach</h2>
+      <p>I designed an account recovery experience with two entry points for identity verification.</p>
+      <p>Username path: Members who remember their username can enter it to begin the recovery process. After verifying their identity with a one-time PIN, they can create a new password and regain access to their account.</p>
+      <p>Membership number path: Members who don't remember their username can use their membership number and ZIP code instead. After verification, they receive their username and can continue through the password reset process.</p>
+      <p>Both paths ultimately lead members through the same streamlined password recovery experience.</p>
+    </section>
+    <section>
+      <h2>The solution</h2>
+      <p>Key improvements included: providing an alternative to username-based recovery, breaking the recovery process into simple, manageable steps, clearly communicating what information members need at each stage, using a one-time PIN to verify member identity, providing clear feedback when a username is recovered or a password is successfully changed, and creating a consistent experience across both recovery paths.</p>
+    </section>
+    <section>
+      <h2>The final experience</h2>
+      <p>The resulting flow guides members through: Choose recovery method &rarr; Verify identity &rarr; Recover username if needed &rarr; Create new password &rarr; Confirmation.</p>
+      <p>This approach ensures that forgetting a username doesn't become a dead end and gives members a clear path back into their account.</p>
+    </section>
+    
+    <div class="case-more">
+      <a class="btn btn-primary" href="login-experience.html">Next: Login Experience &rarr;</a>
+      <a class="btn btn-secondary" href="../index.html">All case-studies</a>
+    </div>
+      </div>
+    </div>
+  </main>
+  <footer class="site-footer">
+    <div class="footer-cta">
+      <div>
+        <h2>Let’s make something better.</h2>
+        <p>Whether it’s a frustrating user flow, a half-baked idea, or a blank canvas, I’m always up for a good design challenge.</p>
+        <p class="footer-meta">Based in San Diego · Available for select projects</p>
+      </div>
+      <a class="footer-email" href="mailto:lironmarko@gmail.com">lironmarko@gmail.com</a>
+    </div>
+    <div class="footer-bottom">
+      <span class="copyright">&copy; 2026 Liron Markovich</span>
+      <div class="footer-links">
+        <a href="https://www.linkedin.com/in/lironmarkovich/" target="_blank" rel="noopener">LinkedIn</a>
+      </div>
+    </div>
+  </footer>
+  
+<script src="../js/main.js"></script>
+
+</body>
+</html>
